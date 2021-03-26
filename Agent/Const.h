@@ -17,4 +17,9 @@ const int SIZE = 15;
 const int dr[] = {0, 1, 1, 1};
 const int dc[] = {1, 1, 0, -1};
 
+// 每个位置落子类型：-1 无子，0 白，1 黑
+const int UNPLACE = -1;
+const int WHITE = 0;
+const int BLACK = 1;
+
 #endif

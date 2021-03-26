@@ -18,11 +18,13 @@ struct Board {
     // 输出棋盘
     void Show();
     // 落子
-    void PlaceAt(int, int, bool);
+    void PlaceAt(int, int, int);
     // 随机落子
-    bool RandomPlace(bool);
+    tuple<int, int, bool> RandomPlace(int);
     // 取消落子
     void UnPlaceAt(int, int);
+    // 检查是否为五子
+    bool CheckFive(int color);
     // 更新每个位置得分
     void CalcValue();
 };
@@ -52,8 +54,9 @@ void Board::Show() {
     }
 }
 
-void Board::PlaceAt(int x, int y, bool color) {
-    boardState[(int)x][(int)y] = color;
+void Board::PlaceAt(int x, int y, int color) {
+    if ((x >= 0 && x < SIZE) && (y >= 0 && y < SIZE))
+        boardState[(int)x][(int)y] = color;
 
 #ifndef ONLINE_JUDGE
     cout << "Chess Placed at: "
@@ -63,15 +66,42 @@ void Board::PlaceAt(int x, int y, bool color) {
 
 void Board::UnPlaceAt(int x, int y) { boardState[x][y] = -1; }
 
-bool Board::RandomPlace(bool color) {
+tuple<int, int, bool> Board::RandomPlace(int color) {
     vector<int> v;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == -1) v.push_back(i * 15 + j);
+            if (boardState[i][j] == -1)
+                v.push_back(i * 15 + j);
     }
-    if (!v.size()) return false;
+    if (!v.size())
+        return {-1, -1, false};
     int id = v[rand() % v.size()];
     PlaceAt(id / 15, id % 15, color);
-    return true;
+    return {id / 15, id % 15, true};
 }
+
+bool Board::CheckFive(int color) {
+    for (int i = 0; i < SIZE; i++)
+        for (int j = 0; j < SIZE; j++) {
+            if (boardState[i][j] != color)
+                continue;
+            // 遍历每个位置
+            for (int k = 0; k < 4; k++) {
+                int ti = i, tj = j;
+                // 遍历每个棋子
+                for (int s = 1; s <= 4; s++) {
+                    ti += dr[k];
+                    tj += dc[k];
+                    if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE)
+                        continue;
+                    if (boardState[ti][tj] != color)
+                        break;
+                    if (s == 4)
+                        return true;
+                }
+            }
+        }
+    return false;
+}
+
 #endif

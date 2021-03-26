@@ -5,14 +5,15 @@
 
 #include "Board.hpp"
 #include "Const.h"
+#include "jsoncpp/json.h"
+#define UNUSED(x, y) (x) += (y)
 //#include "Timer.hpp"
 using namespace std;
-
 struct Agent {
     // 搜索深度默认为 6
     const int searchDepth = 6;
     // 默认后手
-    const bool color = 0;
+    int color = WHITE;
     // 计时器
     // Timer* myTimer = nullptr;
     // 棋盘
@@ -24,8 +25,8 @@ struct Agent {
     void Run();
     // 初始化局面
     void Init();
-    // 本地测试需要
-    bool CheckFive(int);
+    // 判断AI是否为先手
+    void DetermineBlack(const Json::Value &, int);
     // MinMaxSearch()
     // SimpleEvaluate() 用于启发式搜索计算得分
 };
@@ -39,51 +40,72 @@ void Agent::Run() {
         int x, y;
         cout << "Your drop position: ";
         cin >> x >> y;
-        myBoard.PlaceAt(x, y, 1);
-        if (CheckFive(1)) {
+        myBoard.PlaceAt(x, y, BLACK);
+        if (myBoard.CheckFive(BLACK)) {
             myBoard.Show();
             cout << "you win" << endl;
             break;
         }
         cout << "Opponent: ";
-        if (!myBoard.RandomPlace(0)) {
-            myBoard.Show();
+        auto [aix, aiy, ok] = myBoard.RandomPlace(color);
+        UNUSED(aix, aiy);
+        myBoard.Show();
+        if (!ok) {
             break;
         }
-        if (CheckFive(0)) {
-            myBoard.Show();
+        if (myBoard.CheckFive(WHITE)) {
             cout << "you lose" << endl;
             break;
         }
-        myBoard.Show();
+    }
+#else
+    // 读入JSON
+    string str;
+    getline(cin, str);
+    Json::Reader reader;
+    Json::Value input;
+    reader.parse(str, input);
+    // 分析自己收到的输入和自己过往的输出，并恢复状态
+    int turnID = input["responses"].size();
+    for (int i = 0; i < turnID; i++) {
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
+                        input["requests"][i]["y"].asInt(), BLACK);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
+                        input["responses"][i]["y"].asInt(), WHITE);
+    }
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
+                    input["requests"][turnID]["y"].asInt(), BLACK);
+    DetermineBlack(input, turnID);
+    auto [x, y, ok] = myBoard.RandomPlace(color);
+    if (ok) {
+        Json::Value ret;
+        ret["response"]["x"] = x;
+        ret["response"]["y"] = y;
+        if (color == BLACK) {
+            ret["data"] = "black";
+        } else {
+            ret["data"] = "white";
+        }
+        Json::FastWriter writer;
+        cout << writer.write(ret) << endl;
     }
 #endif
 }
 
 void Agent::Init() {
     srand(time(0));
-    // 根据jason输入恢复棋盘状态
+    // 根据json输入恢复棋盘状态
     // 最后一对坐标为 (-1,-1) 则 color 设为 1，我方先手
     // 否则，更新棋盘状态，我方后手
     // 本地测试不需要恢复，直接跳过
 }
 
-bool Agent::CheckFive(int color) {
-    for (int i = 0; i < SIZE; i++)
-        for (int j = 0; j < SIZE; j++) {
-            for (int k = 0; k < 4; k++) {
-                if (myBoard.boardState[i][j] != color) continue;
-                int ti = i, tj = j;
-                for (int s = 1; s <= 4; s++) {
-                    ti += dr[k];
-                    tj += dc[k];
-                    if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) continue;
-                    if (myBoard.boardState[ti][tj] != color) break;
-                    if (s == 4) return true;
-                }
-            }
-        }
-    return false;
+void Agent::DetermineBlack(const Json::Value &input, int turnID) {
+    if ((turnID != 0 && input["data"].asString() == "black") ||
+        (input["requests"][turnID]["x"].asInt() == -1 &&
+         input["requests"][turnID]["y"].asInt() == -1)) {
+        color = BLACK;
+    }
 }
 
 #endif
