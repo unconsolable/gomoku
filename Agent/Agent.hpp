@@ -4,7 +4,6 @@
 #include <bits/stdc++.h>
 
 #include "Board.hpp"
-#include "Const.h"
 #include "jsoncpp/json.h"
 #define UNUSED(x, y) (x) += (y)
 //#include "Timer.hpp"
@@ -47,7 +46,8 @@ void Agent::Run() {
             break;
         }
         cout << "Opponent: ";
-        auto [aix, aiy, ok] = myBoard.RandomPlace(color);
+        // auto [aix, aiy, ok] = myBoard.RandomPlace(color);
+        auto [aix, aiy, ok] = myBoard.GreedyPlace(color);
         UNUSED(aix, aiy);
         myBoard.Show();
         if (!ok) {
@@ -76,7 +76,7 @@ void Agent::Run() {
     myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
                     input["requests"][turnID]["y"].asInt(), BLACK);
     DetermineBlack(input, turnID);
-    auto [x, y, ok] = myBoard.RandomPlace(color);
+    auto [x, y, ok] = myBoard.GreedyPlace(color);
     if (ok) {
         Json::Value ret;
         ret["response"]["x"] = x;
