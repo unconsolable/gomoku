@@ -1,6 +1,5 @@
 #ifndef CONST
 #define CONST
-#include <bits/stdc++.h>
 // 放置一些公用常量，不要格式化
 
 //#define ONLINE_JUDGE
@@ -13,7 +12,7 @@ typedef uint_fast8_t UByte;
 const int INF = 1E9;
 
 // 各局面价值表，待完善
-const int valueTable = {0};
+// const int valueTable = {0};
 // 棋盘大小
 const int SIZE = 15;
 // 方向增量，只设置右，右下，下，左下，左，左上，上，右上, clockwise
@@ -35,5 +34,8 @@ const int SLEEPTHREEMARK = 5000;
 const int LIVETWOMARK = 1000;
 const int SLEEPTWOMARK = 500;
 const int ONEMARK = 1;
+
+// bestDropId 表示未设置
+const int BEST_UNDEFINED = -1;
 
 #endif

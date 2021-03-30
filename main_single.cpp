@@ -1,9 +1,59 @@
+#define ONLINE_JUDGE
+#ifdef RELEASE
+#pragma GCC optimize(2)
+#pragma GCC optimize(3, "Ofast", "inline")
+#endif
+// #include "Const.h"
+#ifndef CONST
+#define CONST
+// 放置一些公用常量，不要格式化
+
+//#define ONLINE_JUDGE
+
+// 为加快运行速度，用以下类型代替int(如果不超出范围)
+// typedef int_fast8_t Byte;
+// typedef uint_fast8_t UByte;
+
+#include <tuple>
+#include <iostream>
+#include <algorithm>
+#include <vector>
+
+const int INF = 1E9;
+
+// 各局面价值表，待完善
+// const int valueTable = {0};
+// 棋盘大小
+const int SIZE = 15;
+// 方向增量，只设置右，右下，下，左下，左，左上，上，右上, clockwise
+const int dr[] = {0, 1, 1, 1, 0, -1, -1, -1};
+const int dc[] = {1, 1, 0, -1, -1, -1, 0, 1};
+
+// 每个位置落子类型：
+// -1 无子，0 白，1 黑，2 下标非法
+const int UNPLACE = -1;
+const int WHITE = 0;
+const int BLACK = 1;
+const int INVALID = -2;
+
+// 棋子类型得分，参数可以调整
+const int LIVEFOURMARK = 100000;
+const int SLEEPFOURMARK = 50000;
+const int LIVETHREEMARK = 10000;
+const int SLEEPTHREEMARK = 5000;
+const int LIVETWOMARK = 1000;
+const int SLEEPTWOMARK = 500;
+const int ONEMARK = 1;
+
+// bestDropId 表示未设置
+const int BEST_UNDEFINED = -1;
+
+#endif
+// #include <Board.hpp>
 #ifndef BOARD_H
 #define BOARD_H
 
 #include <bits/stdc++.h>
-
-#include "Const.h"
 
 using namespace std;
 
@@ -65,7 +115,7 @@ void Board::PlaceAt(int x, int y, int color) {
     if ((x >= 0 && x < SIZE) && (y >= 0 && y < SIZE))
         boardState[(int)x][(int)y] = color;
 
-#ifndef ONLINE_JUDGE
+#ifdef DEBUG
     cout << "Chess Placed at: "
          << "(" << (int)x << ", " << (int)y << ")" << endl;
 #endif
@@ -221,3 +271,228 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
 }
 
 #endif
+#ifndef AGENT_HPP
+#define AGENT_HPP
+
+#include <bits/stdc++.h>
+
+#include "jsoncpp/json.h"
+#define UNUSED(x, y) (x) += (y)
+//#include "Timer.hpp"
+using namespace std;
+struct Agent {
+    // 搜索深度默认为 6
+    const int SEARCH_DEPTH = 2;
+    // 默认后手
+    int myColor = WHITE;
+    // 计时器
+    // Timer* myTimer = nullptr;
+    // 棋盘
+    Board myBoard;
+    // 最优落子
+    int bestDropId;
+    // 搜索时上一步落子
+    int lastDropId;
+    // 最高得分
+    int bestScore;
+
+    // 运行
+    void Run();
+    // 从jason读入并初始化棋盘
+    void Init();
+    // 按 json 格式输出
+    void Output();
+    // 判断AI是否为先手
+    void DetermineBlack(const Json::Value &, int);
+    // 搜索
+    int MinMaxSearch(int, int, int);
+    // 局面估值
+    int Evaluate(int);
+    // 对某个位置八个方向检查连五
+    bool CheckFive(int, int);
+};
+
+bool Agent::CheckFive(int color, int posId) {
+    int r = posId / 15, c = posId % 15;
+    // 遍历 4 个方向
+    for (int k = 0; k < 4; k++) {
+        // 遍历每个棋子
+        int tr, tc, cnt(1);
+        for (int s = 1; s <= 4; s++) {
+            tr = r + dr[k] * s;
+            tc = c + dc[k] * s;
+            if (tr < 0 || tr >= SIZE || tc < 0 || tc >= SIZE)
+                break;
+            if (myBoard.boardState[tr][tc] != color)
+                break;
+            cnt++;
+        }
+        for (int s = 1; s <= 4; s++) {
+            tr = r - dr[k] * s;
+            tc = c - dc[k] * s;
+            if (tr < 0 || tr >= SIZE || tc < 0 || tc >= SIZE)
+                break;
+            if (myBoard.boardState[tr][tc] != color)
+                break;
+            cnt++;
+        }
+        if (cnt >= 5)
+            return true;
+    }
+    return false;
+}
+
+int Agent::MinMaxSearch(int depth, int alpha, int beta) {
+    bool curColor = (depth & 1) ? myColor : myColor ^ 1;
+    // if (CheckFive(curColor, lastDropId))
+    //     return INF;
+    if (depth <= 0)
+        return Evaluate(curColor);
+    // 所有可能位置
+    vector<int> v;
+    for (int r = 0; r < SIZE; r++)
+        for (int c = 0; c < SIZE; c++)
+            if (myBoard.boardState[r][c] == UNPLACE)
+                v.push_back(r * 15 + c);
+    if (!v.size())
+        return -INF; //无子可走
+    // 按优先级排序
+    auto cmp = [&](int &a, int &b) -> bool {
+        return myBoard.posValue[curColor][a] > myBoard.posValue[curColor][b];
+    };
+    sort(v.begin(), v.end(), cmp);
+    // 对所有可能局面进行搜索
+    for (size_t i = 0; i < v.size(); i++) {
+        // 记录落子位置
+        myBoard.PlaceAt(v[i] / 15, v[i] % 15, curColor);
+        int tmpId = lastDropId;
+        lastDropId = v[i];
+        // 继续搜索
+        int val = -MinMaxSearch(depth - 1, -beta, -alpha);
+        // 取消落子
+        myBoard.UnPlaceAt(v[i] / 15, v[i] % 15);
+        lastDropId = tmpId;
+        if (val >= beta) {
+            if (depth == SEARCH_DEPTH)
+                bestScore = val, bestDropId = v[i];
+            return val;
+        }
+        if (val > alpha)
+            alpha = val; // bestDropId
+        if (depth == SEARCH_DEPTH && (val > bestScore || bestDropId == BEST_UNDEFINED))
+            bestScore = val, bestDropId = v[i];
+    }
+    return alpha;
+}
+
+void Agent::Run() {
+    Init();
+
+#ifndef ONLINE_JUDGE
+    myBoard.Show();
+    while (true) {
+        int x, y;
+        cout << "Your drop position: ";
+        cin >> x >> y;
+        myBoard.PlaceAt(x, y, BLACK);
+        if (CheckFive(BLACK, x * 15 + y)) {
+            myBoard.Show();
+            cout << "you win" << endl;
+            break;
+        }
+        cout << "Opponent: ";
+        // 估值函数写好再用！
+        bestDropId = BEST_UNDEFINED;
+        MinMaxSearch(SEARCH_DEPTH, -INF, INF);
+        myBoard.PlaceAt(bestDropId / 15, bestDropId % 15, myColor);
+        myBoard.Show();
+        if (!bestDropId)
+            break;
+        if (CheckFive(WHITE, bestDropId)) {
+            cout << "you lose" << endl;
+            break;
+        }
+    }
+#endif
+    Output();
+}
+
+void Agent::Init() {
+    // 根据json输入恢复棋盘状态
+    // 最后一对坐标为 (-1,-1) 则 color 设为 1，我方先手
+    // 否则，更新棋盘状态，我方后手
+    // 本地测试不需要恢复，直接跳过
+    // 读入JSON
+#ifdef ONLINE_JUDGE
+    string str;
+    getline(cin, str);
+    Json::Reader reader;
+    Json::Value input;
+    reader.parse(str, input);
+    // 分析自己收到的输入和自己过往的输出，并恢复状态
+    int turnID = input["responses"].size();
+    for (int i = 0; i < turnID; i++) {
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(), input["requests"][i]["y"].asInt(),
+                        BLACK);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(), input["responses"][i]["y"].asInt(),
+                        WHITE);
+    }
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(), input["requests"][turnID]["y"].asInt(),
+                    BLACK);
+    DetermineBlack(input, turnID);
+    bestDropId = BEST_UNDEFINED;
+    MinMaxSearch(SEARCH_DEPTH, -INF, INF);
+#endif
+}
+
+void Agent::Output() {
+#ifdef ONLINE_JUDGE
+    Json::Value ret;
+    ret["response"]["x"] = bestDropId / 15;
+    ret["response"]["y"] = bestDropId % 15;
+    if (myColor == BLACK) {
+        ret["data"] = "black";
+    } else {
+        ret["data"] = "white";
+    }
+    Json::FastWriter writer;
+    cout << writer.write(ret) << endl;
+#endif
+}
+
+void Agent::DetermineBlack(const Json::Value &input, int turnID) {
+    if ((turnID != 0 && input["data"].asString() == "black") ||
+        (input["requests"][turnID]["x"].asInt() == -1 &&
+         input["requests"][turnID]["y"].asInt() == -1)) {
+        myColor = BLACK;
+    }
+}
+
+int Agent::Evaluate(int curColor) {
+    // 所有可能位置
+    vector<int> v;
+    int total = 0;
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (myBoard.boardState[i][j] == UNPLACE) {
+                total += myBoard.MarkOfPoint(i, j, curColor);
+            }
+        }
+    }
+    return total;
+}
+
+#endif
+
+#include <bits/stdc++.h>
+
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    srand(time(0));
+    auto ai = new Agent;
+    ai->Run();
+    delete ai;
+    return 0;
+}
