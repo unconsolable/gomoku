@@ -9,6 +9,7 @@ using namespace std;
 
 int main() {
     ios::sync_with_stdio(false);
+    srand(time(0));
     auto ai = new Agent;
     ai->Run();
     delete ai;
