@@ -31,8 +31,10 @@ struct Agent {
 
     // 运行
     void Run();
-    // 初始化局面
+    // 从jason读入并初始化棋盘
     void Init();
+    // 按 json 格式输出
+    void Output();
     // 判断AI是否为先手
     void DetermineBlack(const Json::Value &);
     // 局面估值
