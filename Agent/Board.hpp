@@ -8,11 +8,11 @@
 using namespace std;
 
 struct Board {
-    /* 
+    /*
      * 两个选手未落子位置得分，用于MinMaxSearch对选择位置进行排序，得分高的位置先选
      * 可能不需要两个，之后根据需求调整
      */
-    int posValue[2][SIZE][SIZE];
+    int posValue[2][SIZE * SIZE];
     // 每个位置落子类型：-1 无子，0 白，1 黑
     int boardState[SIZE][SIZE];
 
@@ -28,9 +28,7 @@ struct Board {
     tuple<int, int, bool> GreedyPlace(int);
     // 取消落子
     void UnPlaceAt(int, int);
-    // 检查是否为五子
-    bool CheckFive(int color);
-    // 更新每个位置得分
+    // 每个位置得分
     void CalcValue();
     // 和当前点相对位置的格子值
     int RelativePosVal(int, int, int, int);
@@ -41,7 +39,7 @@ struct Board {
 Board::Board() {
     for (int i = 0; i < SIZE; i++)
         for (int j = 0; j < SIZE; j++) {
-            posValue[0][i][j] = posValue[1][i][j] = 0;
+            posValue[0][i * 15 + j] = posValue[1][i * 15 + j] = 0;
             boardState[i][j] = -1;
         }
 }
@@ -79,11 +77,9 @@ tuple<int, int, bool> Board::RandomPlace(int color) {
     vector<int> v;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == -1)
-                v.push_back(i * 15 + j);
+            if (boardState[i][j] == -1) v.push_back(i * 15 + j);
     }
-    if (!v.size())
-        return {-1, -1, false};
+    if (!v.size()) return {-1, -1, false};
     int id = v[rand() % v.size()];
     PlaceAt(id / 15, id % 15, color);
     return {id / 15, id % 15, true};
@@ -93,13 +89,13 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
     vector<int> v;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == UNPLACE)
-                v.push_back(i * 15 + j);
+            if (boardState[i][j] == UNPLACE) v.push_back(i * 15 + j);
     }
-    if (!v.size())
-        return {-1, -1, false};
+    if (!v.size()) return {-1, -1, false};
     // 鼓励在中心位置放子
-    auto CentralMark = [](int x, int y) { return 14 - abs(x - 7) - abs(y - 7); };
+    auto CentralMark = [](int x, int y) {
+        return 14 - abs(x - 7) - abs(y - 7);
+    };
     // 考虑放子对自己和对手的影响
     int maxMark = MarkOfPoint(v[0] / 15, v[0] % 15, color, color) +
                   CentralMark(v[0] / 15, v[0] % 15),
@@ -107,7 +103,8 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
     for (size_t id = 1; id < v.size(); id++) {
         auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, color, color) +
                        CentralMark(v[id] / 15, v[id] % 15);
-        // cout << "curMark: " << curMark << "x: " << v[id] / 15 << "y: " << v[id] % 15 << "\n";
+        // cout << "curMark: " << curMark << "x: " << v[id] / 15 << "y: " <<
+        // v[id] % 15 << "\n";
         if (curMark > maxMark) {
             maxMark = curMark;
             maxPoint = v[id];
@@ -115,30 +112,6 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
     }
     PlaceAt(maxPoint / 15, maxPoint % 15, color);
     return {maxPoint / 15, maxPoint % 15, true};
-}
-
-bool Board::CheckFive(int color) {
-    for (int i = 0; i < SIZE; i++)
-        for (int j = 0; j < SIZE; j++) {
-            if (boardState[i][j] != color)
-                continue;
-            // 遍历每个位置
-            for (int k = 0; k < 4; k++) {
-                int ti = i, tj = j;
-                // 遍历每个棋子
-                for (int s = 1; s <= 4; s++) {
-                    ti += dr[k];
-                    tj += dc[k];
-                    if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE)
-                        continue;
-                    if (boardState[ti][tj] != color)
-                        break;
-                    if (s == 4)
-                        return true;
-                }
-            }
-        }
-    return false;
 }
 
 int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
@@ -216,7 +189,8 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor, int aiColor) {
             RelativePosVal(curX, curY, i, 3) == playerColor &&
             RelativePosVal(curX, curY, i, 3) == playerColor) {
             // cout << "SLEEPTHREEMARK ";
-            total += (playerColor == aiColor) ? SLEEPTHREEMARK : -SLEEPTHREEMARK;
+            total +=
+                (playerColor == aiColor) ? SLEEPTHREEMARK : -SLEEPTHREEMARK;
         }
         // 活二 #0011
         if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
