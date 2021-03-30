@@ -23,13 +23,16 @@ const int BRANCH_LIMIT = 32;
 // 搜索深度默认为 6, 优化后再升级
 const int SEARCH_DEPTH = 6;
 
+
+const int INF = 1E9;
+
 // 各局面价值表，待完善
 const int valueTable = {0};
 // 棋盘大小
 const int SIZE = 15;
-// 方向增量，只设置右，右下，下，左下
-const int dr[] = {0, 1, 1, 1};
-const int dc[] = {1, 1, 0, -1};
+// 方向增量，只设置右，右下，下，左下，左，左上，上，右上, clockwise
+const int dr[] = {0, 1, 1, 1, 0, -1, -1, -1};
+const int dc[] = {1, 1, 0, -1, -1, -1, 0, 1};
 
 // 每个位置落子类型：
 // -1 无子，0 白，1 黑，2 下标非法
