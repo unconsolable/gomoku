@@ -76,15 +76,17 @@ void Board::PlaceAt(int x, int y, int color) {
 #endif
 }
 
-void Board::UnPlaceAt(int x, int y) { boardState[x][y] = -1; }
+void Board::UnPlaceAt(int x, int y) { boardState[x][y] = UNPLACE; }
 
 tuple<int, int, bool> Board::RandomPlace(int color) {
     vector<int> v;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == -1) v.push_back(i * 15 + j);
+            if (boardState[i][j] == -1)
+                v.push_back(i * 15 + j);
     }
-    if (!v.size()) return {-1, -1, false};
+    if (!v.size())
+        return {-1, -1, false};
     int id = v[rand() % v.size()];
     PlaceAt(id / 15, id % 15, color);
     return {id / 15, id % 15, true};
@@ -94,13 +96,13 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
     vector<int> v;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == UNPLACE) v.push_back(i * 15 + j);
+            if (boardState[i][j] == UNPLACE)
+                v.push_back(i * 15 + j);
     }
-    if (!v.size()) return {-1, -1, false};
+    if (!v.size())
+        return {-1, -1, false};
     // 鼓励在中心位置放子
-    auto CentralMark = [](int x, int y) {
-        return 14 - abs(x - 7) - abs(y - 7);
-    };
+    auto CentralMark = [](int x, int y) { return 14 - abs(x - 7) - abs(y - 7); };
     // 考虑放子对自己和对手的影响
     int maxMark = MarkOfPoint(v[0] / 15, v[0] % 15, color) +
                   CentralMark(v[0] / 15, v[0] % 15),
@@ -181,10 +183,10 @@ int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
 int Board::MarkOfPoint(int curX, int curY, int playerColor) {
     /*
      * 8个方向枚举
-     * 以下注释以#表示(curX, curY), 1表示playerColor, 2表示otherColor
+     * 以下注释以#表示(curX, curY), 1表示playerColor
      * 0表示无子, 3表示非法下标, 未注明的表示任意
      * 活的情况必须**中间同色棋子连续**, 中间有间断一定为眠
-     * playerColor与aiColor相同分数为正, 类型相反分数为负
+     * 默认返回正值分数
      */
     int total = 0;
     for (int i = 0; i < 8; i++) {

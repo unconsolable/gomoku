@@ -135,8 +135,17 @@ void Agent::Run() {
             break;
         }
     }
-#else
+#endif
+    Output();
+}
+
+void Agent::Init() {
+    // 根据json输入恢复棋盘状态
+    // 最后一对坐标为 (-1,-1) 则 color 设为 1，我方先手
+    // 否则，更新棋盘状态，我方后手
+    // 本地测试不需要恢复，直接跳过
     // 读入JSON
+#ifdef ONLINE_JUDGE
     string str;
     getline(cin, str);
     Json::Reader reader;
@@ -160,11 +169,19 @@ void Agent::Run() {
 #endif
 }
 
-void Agent::Init() {
-    // 根据json输入恢复棋盘状态
-    // 最后一对坐标为 (-1,-1) 则 color 设为 1，我方先手
-    // 否则，更新棋盘状态，我方后手
-    // 本地测试不需要恢复，直接跳过
+void Agent::Output() {
+#ifdef ONLINE_JUDGE
+    Json::Value ret;
+    ret["response"]["x"] = bestDropId / 15;
+    ret["response"]["y"] = bestDropId % 15;
+    if (myColor == BLACK) {
+        ret["data"] = "black";
+    } else {
+        ret["data"] = "white";
+    }
+    Json::FastWriter writer;
+    cout << writer.write(ret) << endl;
+#endif
 }
 
 void Agent::DetermineBlack(const Json::Value &input) {
@@ -258,6 +275,20 @@ LL Agent::Evaluate(int color) {
     for (auto& pos : nextPos[color ^ 1]) tot -= pos.w * 8 / 10;
     //return nextPos[color].begin()->w;
     return tot;
+}
+
+int Agent::Evaluate(int curColor) {
+    // 所有可能位置
+    vector<int> v;
+    int total = 0;
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (myBoard.boardState[i][j] == UNPLACE) {
+                total += myBoard.MarkOfPoint(i, j, curColor);
+            }
+        }
+    }
+    return total;
 }
 
 #endif
