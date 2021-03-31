@@ -72,7 +72,9 @@ int SEARCHCNT[] = {0, 2, 3, 3, 4, 7, 10};
 #include "Const.h"
 
 using namespace std;
-
+#ifdef DEBUG
+int markcallcnt = 0;
+#endif
 struct Board {
     // 每个位置得分，用于MinMaxSearch对选择位置进行排序，得分高的位置先选
     int posValue[SIZE][SIZE];
@@ -249,6 +251,9 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
      * 活的情况必须**中间同色棋子连续**, 中间有间断一定为眠
      * playerColor与aiColor相同分数为正, 类型相反分数为负
      */
+#ifdef DEBUG
+    markcallcnt++;
+#endif
     int total = 0;
     for (int i = 0; i < 8; i++) {
         // 活四LIVEFOUR, #11110
@@ -393,6 +398,9 @@ bool operator<(const Position& lhs, const Position& rhs) {
 #define UNUSED(x, y) (x) += (y)
 
 using namespace std;
+#ifdef DEBUG
+extern int markcallcnt;
+#endif
 struct Agent {
     // 默认后手
     int color = WHITE;

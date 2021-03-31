@@ -23,7 +23,7 @@ const int BRANCH_LIMIT = 32;
 const int SEARCH_DEPTH = 6;
 
 
-const int INF = 1E9;
+const int INF = 1E8;
 
 // 各局面价值表，待完善
 // const int valueTable = {0};

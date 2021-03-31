@@ -10,6 +10,9 @@
 #define UNUSED(x, y) (x) += (y)
 
 using namespace std;
+#ifdef DEBUG
+extern int markcallcnt;
+#endif
 struct Agent {
     // 默认后手
     int color = WHITE;
@@ -279,16 +282,46 @@ LL Agent::Evaluate(int color) {
 
 int Agent::Evaluate(int curColor) {
     // 所有可能位置
-    vector<int> v;
+    auto &v = nextPos[curColor];
     int total = 0;
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            if (myBoard.boardState[i][j] == UNPLACE) {
-                total += myBoard.MarkOfPoint(i, j, curColor);
-            }
+    for (const auto &i : v) {
+        if (i != -1 && myBoard.boardState[i / SIZE][i % SIZE] == UNPLACE) {
+            total += myBoard.MarkOfPoint(i / SIZE, i % SIZE, curColor);
         }
     }
     return total;
+}
+
+void Agent::PreDrop() {
+    #ifdef DEBUG
+    cout << "Before PreDrop():" << markcallcnt << '\n';
+    #endif
+    nextPos[WHITE].clear();
+    nextPos[BLACK].clear();
+    for (int r = 0; r < SIZE; r++)
+        for (int c = 0; c < SIZE; c++)
+            if (myBoard.boardState[r][c] == UNPLACE) {
+                nextPos[WHITE].push_back(r * 15 + c);
+                myBoard.posValue[WHITE][r * 15 + c] = 14 - abs(r - 7) - abs(c - 7) + myBoard.MarkOfPoint(r, c, WHITE);
+                nextPos[BLACK].push_back(r * 15 + c);
+                myBoard.posValue[BLACK][r * 15 + c] = 14 - abs(r - 7) - abs(c - 7) + myBoard.MarkOfPoint(r, c, BLACK);
+            } else {
+                myBoard.posValue[WHITE][r * 15 + c] = -1;
+                myBoard.posValue[BLACK][r * 15 + c] = -1;
+            }
+    #ifdef DEBUG
+    cout << "After PreDrop():" << markcallcnt << '\n';
+    #endif
+    // 按优先级排序
+    auto cmpWhite = [&](int &a, int &b) -> bool {
+        return myBoard.posValue[WHITE][a] > myBoard.posValue[WHITE][b];
+    };
+    auto cmpBlack = [&](int &a, int &b) -> bool {
+        return myBoard.posValue[BLACK][a] > myBoard.posValue[BLACK][b];
+    };
+    sort(nextPos[WHITE].begin(), nextPos[WHITE].end(), cmpWhite);
+    sort(nextPos[BLACK].begin(), nextPos[BLACK].end(), cmpBlack);
+
 }
 
 #endif
