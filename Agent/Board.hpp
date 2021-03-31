@@ -6,7 +6,9 @@
 #include "Const.h"
 
 using namespace std;
-
+#ifdef DEBUG
+int markcallcnt = 0;
+#endif
 struct Board {
     /*
      * 两个选手未落子位置得分，用于MinMaxSearch对选择位置进行排序，得分高的位置先选
@@ -65,7 +67,7 @@ void Board::PlaceAt(int x, int y, int color) {
     if ((x >= 0 && x < SIZE) && (y >= 0 && y < SIZE))
         boardState[(int)x][(int)y] = color;
 
-#ifndef ONLINE_JUDGE
+#ifdef DEBUG
     cout << "Chess Placed at: "
          << "(" << (int)x << ", " << (int)y << ")" << endl;
 #endif
@@ -135,6 +137,9 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
      * 活的情况必须**中间同色棋子连续**, 中间有间断一定为眠
      * 默认返回正值分数
      */
+#ifdef DEBUG
+    markcallcnt++;
+#endif
     int total = 0;
     for (int i = 0; i < 8; i++) {
         // 活四LIVEFOUR, #11110

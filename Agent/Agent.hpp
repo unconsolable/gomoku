@@ -8,6 +8,9 @@
 #define UNUSED(x, y) (x) += (y)
 //#include "Timer.hpp"
 using namespace std;
+#ifdef DEBUG
+extern int markcallcnt;
+#endif
 struct Agent {
     // 搜索深度默认为 6, 优化后再升级
     const int SEARCH_DEPTH = 2;
@@ -23,6 +26,8 @@ struct Agent {
     int lastDropId;
     // 最高得分
     int bestScore;
+    // 可能的落子位置
+    vector<int> nextPos[2];
 
     // 运行
     void Run();
@@ -38,6 +43,8 @@ struct Agent {
     int Evaluate(int);
     // 对某个位置八个方向检查连五
     bool CheckFive(int, int);
+    // 搜索之前: 预处理得分情况
+    void PreDrop();
 };
 
 bool Agent::CheckFive(int color, int posId) {
@@ -74,34 +81,32 @@ int Agent::MinMaxSearch(int depth, int alpha, int beta) {
     bool curColor = (depth & 1) ? myColor : myColor ^ 1;
     // if (CheckFive(curColor, lastDropId))
     //     return INF;
-    if (depth <= 0)
-        return Evaluate(curColor);
-    // 所有可能位置
-    vector<int> v;
-    for (int r = 0; r < SIZE; r++)
-        for (int c = 0; c < SIZE; c++)
-            if (myBoard.boardState[r][c] == UNPLACE) {
-                v.push_back(r * 15 + c);
-                myBoard.posValue[curColor][r * 15 + c] = 14 - abs(r - 7) - abs(c - 7) + myBoard.MarkOfPoint(r, c, curColor);
-            } else {
-                myBoard.posValue[curColor][r * 15 + c] = -1;
-            }
-    if (!v.size())
+    auto &v = nextPos[curColor];
+    if (depth <= 0) {
+        #ifdef DEBUG
+        cout << "Before Evaulate()" << markcallcnt << '\n';
+        #endif
+        int res = Evaluate(curColor);
+        #ifdef DEBUG
+        cout << "After Evaulate()" << markcallcnt << '\n';
+        #endif
+        return res;
+    }
+    if (!nextPos[curColor].size())
         return -INF; //无子可走
-    // 按优先级排序
-    auto cmp = [&](int &a, int &b) -> bool {
-        return myBoard.posValue[curColor][a] > myBoard.posValue[curColor][b];
-    };
-    sort(v.begin(), v.end(), cmp);
     // 对所有可能局面进行搜索
     for (size_t i = 0; i < v.size(); i++) {
+        if (v[i] == -1 || myBoard.boardState[v[i] / 15][v[i] % 15] != UNPLACE)
+            continue;
         // 记录落子位置
         myBoard.PlaceAt(v[i] / 15, v[i] % 15, curColor);
         int tmpId = lastDropId;
         lastDropId = v[i];
+        v[i] = -1;
         // 继续搜索
         int val = -MinMaxSearch(depth - 1, -beta, -alpha);
         // 取消落子
+        v[i] = lastDropId;
         myBoard.UnPlaceAt(v[i] / 15, v[i] % 15);
         lastDropId = tmpId;
         if (val >= beta) {
@@ -135,7 +140,16 @@ void Agent::Run() {
         cout << "Opponent: ";
         // 估值函数写好再用！
         bestDropId = BEST_UNDEFINED;
+        PreDrop();
+        #ifdef DEBUG
+        clock_t clk0, clk1;
+        clk0 = clock();
+        #endif
         MinMaxSearch(SEARCH_DEPTH, -INF, INF);
+        #ifdef DEBUG
+        clk1 = clock();
+        cout << (double)(clk1 - clk0) / CLOCKS_PER_SEC << ' ' << markcallcnt << '\n';
+        #endif
         myBoard.PlaceAt(bestDropId / 15, bestDropId % 15, myColor);
         myBoard.Show();
         if (!bestDropId)
@@ -173,6 +187,7 @@ void Agent::Init() {
                     BLACK);
     DetermineBlack(input, turnID);
     bestDropId = BEST_UNDEFINED;
+    PreDrop();
     MinMaxSearch(SEARCH_DEPTH, -INF, INF);
 #endif
 }
@@ -202,16 +217,46 @@ void Agent::DetermineBlack(const Json::Value &input, int turnID) {
 
 int Agent::Evaluate(int curColor) {
     // 所有可能位置
-    vector<int> v;
+    auto &v = nextPos[curColor];
     int total = 0;
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            if (myBoard.boardState[i][j] == UNPLACE) {
-                total += myBoard.MarkOfPoint(i, j, curColor);
-            }
+    for (const auto &i : v) {
+        if (i != -1 && myBoard.boardState[i / SIZE][i % SIZE] == UNPLACE) {
+            total += myBoard.MarkOfPoint(i / SIZE, i % SIZE, curColor);
         }
     }
     return total;
+}
+
+void Agent::PreDrop() {
+    #ifdef DEBUG
+    cout << "Before PreDrop():" << markcallcnt << '\n';
+    #endif
+    nextPos[WHITE].clear();
+    nextPos[BLACK].clear();
+    for (int r = 0; r < SIZE; r++)
+        for (int c = 0; c < SIZE; c++)
+            if (myBoard.boardState[r][c] == UNPLACE) {
+                nextPos[WHITE].push_back(r * 15 + c);
+                myBoard.posValue[WHITE][r * 15 + c] = 14 - abs(r - 7) - abs(c - 7) + myBoard.MarkOfPoint(r, c, WHITE);
+                nextPos[BLACK].push_back(r * 15 + c);
+                myBoard.posValue[BLACK][r * 15 + c] = 14 - abs(r - 7) - abs(c - 7) + myBoard.MarkOfPoint(r, c, BLACK);
+            } else {
+                myBoard.posValue[WHITE][r * 15 + c] = -1;
+                myBoard.posValue[BLACK][r * 15 + c] = -1;
+            }
+    #ifdef DEBUG
+    cout << "After PreDrop():" << markcallcnt << '\n';
+    #endif
+    // 按优先级排序
+    auto cmpWhite = [&](int &a, int &b) -> bool {
+        return myBoard.posValue[WHITE][a] > myBoard.posValue[WHITE][b];
+    };
+    auto cmpBlack = [&](int &a, int &b) -> bool {
+        return myBoard.posValue[BLACK][a] > myBoard.posValue[BLACK][b];
+    };
+    sort(nextPos[WHITE].begin(), nextPos[WHITE].end(), cmpWhite);
+    sort(nextPos[BLACK].begin(), nextPos[BLACK].end(), cmpBlack);
+
 }
 
 #endif
