@@ -293,6 +293,20 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
                    RelativePosVal(curX, curY, i, 2) == playerColor) {
             total += NEARLIVETWOMARK;
         }
+        if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 2) == playerColor &&
+            RelativePosVal(curX, curY, i, 3) == playerColor) {
+            // cout << "LIVETWOMARK ";
+            total += LIVETWOMARK;
+        }
+        if (RelativePosVal(curX, curY, i, -2) == UNPLACE &&
+            RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 1) == playerColor &&
+            RelativePosVal(curX, curY, i, 2) == playerColor) {
+            // cout << "LIVETWOMARK ";
+            total += LIVETWOMARK;
+        }
         // 眠二 1#1
         else if (RelativePosVal(curX, curY, i, -1) == playerColor &&
                  RelativePosVal(curX, curY, i, 1) == playerColor) {
