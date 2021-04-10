@@ -198,11 +198,25 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
             // cout << "SLEEPTHREEMARK ";
             total += SLEEPTHREEMARK;
         }
-        // 活二 #0011
+        // 活二 #0011, 0#011, 00#11
         if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
             RelativePosVal(curX, curY, i, 2) == UNPLACE &&
             RelativePosVal(curX, curY, i, 3) == playerColor &&
             RelativePosVal(curX, curY, i, 4) == playerColor) {
+            // cout << "LIVETWOMARK ";
+            total += LIVETWOMARK;
+        }
+        if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 2) == playerColor &&
+            RelativePosVal(curX, curY, i, 3) == playerColor) {
+            // cout << "LIVETWOMARK ";
+            total += LIVETWOMARK;
+        }
+        if (RelativePosVal(curX, curY, i, -2) == UNPLACE &&
+            RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 1) == playerColor &&
+            RelativePosVal(curX, curY, i, 2) == playerColor) {
             // cout << "LIVETWOMARK ";
             total += LIVETWOMARK;
         }
@@ -212,11 +226,11 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
             // cout << "SLEEPTWOMARK ";
             total += SLEEPTWOMARK;
         }
-        // 剩余情况, 以加和为1代替
-        if ((RelativePosVal(curX, curY, i, 1) == playerColor) +
-                (RelativePosVal(curX, curY, i, 2) == playerColor) +
-                (RelativePosVal(curX, curY, i, 3) == playerColor) +
-                (RelativePosVal(curX, curY, i, 4) == playerColor) ==
+        // 只认为0000#1为活一
+        if ((RelativePosVal(curX, curY, i, -3) == UNPLACE) +
+                (RelativePosVal(curX, curY, i, -2) == UNPLACE) +
+                (RelativePosVal(curX, curY, i, -1) == UNPLACE) +
+                (RelativePosVal(curX, curY, i, 1) == playerColor) ==
             1) {
             // cout << "ONEMARK ";
             total += ONEMARK;
