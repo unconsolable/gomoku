@@ -110,6 +110,18 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
             maxPoint = v[id];
         }
     }
+    // try to fail the oppoent to achieve more than live three
+    int avoidOppoent = -1, oppoentMark = -1;
+    for (size_t id = 0; id < v.size(); id++) {
+        auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, !color, !color);
+        if (curMark > LIVETHREEMARK && curMark > oppoentMark) {
+            avoidOppoent = v[id];
+            oppoentMark = curMark;
+        }
+    }
+    if (avoidOppoent != -1) {
+        maxPoint = avoidOppoent;
+    }
     PlaceAt(maxPoint / 15, maxPoint % 15, color);
     return {maxPoint / 15, maxPoint % 15, true};
 }
@@ -215,11 +227,25 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor, int aiColor) {
             // cout << "SLEEPTHREEMARK ";
             total += (playerColor == aiColor) ? SLEEPTHREEMARK : -SLEEPTHREEMARK;
         }
-        // 活二 #0011
+        // 活二 #0011, 0#011, 00#11
         if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
             RelativePosVal(curX, curY, i, 2) == UNPLACE &&
             RelativePosVal(curX, curY, i, 3) == playerColor &&
             RelativePosVal(curX, curY, i, 4) == playerColor) {
+            // cout << "LIVETWOMARK ";
+            total += (playerColor == aiColor) ? LIVETWOMARK : -LIVETWOMARK;
+        }
+        if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 2) == playerColor &&
+            RelativePosVal(curX, curY, i, 3) == playerColor) {
+            // cout << "LIVETWOMARK ";
+            total += (playerColor == aiColor) ? LIVETWOMARK : -LIVETWOMARK;
+        }
+        if (RelativePosVal(curX, curY, i, -2) == UNPLACE &&
+            RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+            RelativePosVal(curX, curY, i, 1) == playerColor &&
+            RelativePosVal(curX, curY, i, 2) == playerColor) {
             // cout << "LIVETWOMARK ";
             total += (playerColor == aiColor) ? LIVETWOMARK : -LIVETWOMARK;
         }
@@ -229,11 +255,11 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor, int aiColor) {
             // cout << "SLEEPTWOMARK ";
             total += (playerColor == aiColor) ? SLEEPTWOMARK : -SLEEPTWOMARK;
         }
-        // 剩余情况, 以加和为1代替
-        if ((RelativePosVal(curX, curY, i, 1) == playerColor) +
-                (RelativePosVal(curX, curY, i, 2) == playerColor) +
-                (RelativePosVal(curX, curY, i, 3) == playerColor) +
-                (RelativePosVal(curX, curY, i, 4) == playerColor) ==
+        // 只认为0000#1为活一
+        if ((RelativePosVal(curX, curY, i, -3) == UNPLACE) +
+                (RelativePosVal(curX, curY, i, -2) == UNPLACE) +
+                (RelativePosVal(curX, curY, i, -1) == UNPLACE) +
+                (RelativePosVal(curX, curY, i, 1) == playerColor) ==
             1) {
             // cout << "ONEMARK ";
             total += (playerColor == aiColor) ? ONEMARK : -ONEMARK;
