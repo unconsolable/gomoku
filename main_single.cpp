@@ -1,9 +1,56 @@
+#define ONLINE_JUDGE
+#define RELEASE
+#ifdef RELEASE
+#pragma GCC optimize(2)
+#pragma GCC optimize(3, "Ofast", "inline")
+#endif
+#include <bits/stdc++.h>
+using namespace std;
+// #include <Const.h>
+#ifndef CONST
+#define CONST
+// 放置一些公用常量，不要格式化
+
+//#define ONLINE_JUDGE
+
+// 为加快运行速度，用以下类型代替int(如果不超出范围)
+typedef int_fast8_t Byte;
+typedef uint_fast8_t UByte;
+
+// 各局面价值表，待完善
+const int valueTable = {0};
+// 棋盘大小
+const int SIZE = 15;
+// 方向增量，只设置右，右下，下，左下
+const int dr[] = {0, 1, 1, 1};
+const int dc[] = {1, 1, 0, -1};
+
+// 每个位置落子类型：
+// -1 无子，0 白，1 黑，2 下标非法
+const int UNPLACE = -1;
+const int WHITE = 0;
+const int BLACK = 1;
+const int INVALID = -2;
+
+// 棋子类型得分，参数可以调整
+// 拆分远近活三，远中近活二
+const int LIVEFOURMARK = 100000;
+const int SLEEPFOURMARK = 50000;
+const int NEARLIVETHREEMARK = 10200;
+const int FARLIVETHREEMARK = 10000;
+const int SLEEPTHREEMARK = 5000;
+const int NEARLIVETWOMARK = 1200;
+const int MIDLIVETWOMARK = 1050;
+const int FARLIVETWOMARK = 1000;
+const int SLEEPTWOMARK = 500;
+const int ONEMARK = 1;
+
+#endif
+// #include <Board.hpp>
 #ifndef BOARD_H
 #define BOARD_H
 
 #include <bits/stdc++.h>
-
-#include "Const.h"
 
 using namespace std;
 
@@ -110,7 +157,7 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
             maxPoint = v[id];
         }
     }
-    // try to fail the oppoent to achieve more than live three
+    // 在敌方形成活三后尝试堵子
     int avoidOppoent = -1, oppoentMark = -1;
     for (size_t id = 0; id < v.size(); id++) {
         auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, !color) +
@@ -270,3 +317,119 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
 }
 
 #endif
+// #include <Agent.hpp>
+#ifndef AGENT_HPP
+#define AGENT_HPP
+#include "jsoncpp/json.h"
+#define UNUSED(x, y) (x) += (y)
+//#include "Timer.hpp"
+using namespace std;
+struct Agent {
+    // 搜索深度默认为 6
+    const int searchDepth = 6;
+    // 默认后手
+    int color = WHITE;
+    // 计时器
+    // Timer* myTimer = nullptr;
+    // 棋盘
+    Board myBoard;
+    // 最优落子
+    int bestDropId;
+
+    // 运行
+    void Run();
+    // 初始化局面
+    void Init();
+    // 判断AI是否为先手
+    void DetermineBlack(const Json::Value &, int);
+    // MinMaxSearch()
+    // SimpleEvaluate() 用于启发式搜索计算得分
+};
+
+void Agent::Run() {
+    Init();
+
+#ifndef ONLINE_JUDGE
+    myBoard.Show();
+    while (true) {
+        int x, y;
+        cout << "Your drop position: ";
+        cin >> x >> y;
+        myBoard.PlaceAt(x, y, BLACK);
+        if (myBoard.CheckFive(BLACK)) {
+            myBoard.Show();
+            cout << "you win" << endl;
+            break;
+        }
+        cout << "Opponent: ";
+        // auto [aix, aiy, ok] = myBoard.RandomPlace(color);
+        auto [aix, aiy, ok] = myBoard.GreedyPlace(color);
+        UNUSED(aix, aiy);
+        myBoard.Show();
+        if (!ok) {
+            break;
+        }
+        if (myBoard.CheckFive(WHITE)) {
+            cout << "you lose" << endl;
+            break;
+        }
+    }
+#else
+    // 读入JSON
+    string str;
+    getline(cin, str);
+    Json::Reader reader;
+    Json::Value input;
+    reader.parse(str, input);
+    // 分析自己收到的输入和自己过往的输出，并恢复状态
+    int turnID = input["responses"].size();
+    for (int i = 0; i < turnID; i++) {
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
+                        input["requests"][i]["y"].asInt(), BLACK);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
+                        input["responses"][i]["y"].asInt(), WHITE);
+    }
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
+                    input["requests"][turnID]["y"].asInt(), BLACK);
+    DetermineBlack(input, turnID);
+    auto [x, y, ok] = myBoard.GreedyPlace(color);
+    if (ok) {
+        Json::Value ret;
+        ret["response"]["x"] = x;
+        ret["response"]["y"] = y;
+        if (color == BLACK) {
+            ret["data"] = "black";
+        } else {
+            ret["data"] = "white";
+        }
+        Json::FastWriter writer;
+        cout << writer.write(ret) << endl;
+    }
+#endif
+}
+
+void Agent::Init() {
+    srand(time(0));
+    // 根据json输入恢复棋盘状态
+    // 最后一对坐标为 (-1,-1) 则 color 设为 1，我方先手
+    // 否则，更新棋盘状态，我方后手
+    // 本地测试不需要恢复，直接跳过
+}
+
+void Agent::DetermineBlack(const Json::Value &input, int turnID) {
+    if ((turnID != 0 && input["data"].asString() == "black") ||
+        (input["requests"][turnID]["x"].asInt() == -1 &&
+         input["requests"][turnID]["y"].asInt() == -1)) {
+        color = BLACK;
+    }
+}
+
+#endif
+
+int main() {
+    ios::sync_with_stdio(false);
+    auto ai = new Agent;
+    ai->Run();
+    delete ai;
+    return 0;
+}

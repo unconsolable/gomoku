@@ -25,11 +25,15 @@ const int BLACK = 1;
 const int INVALID = -2;
 
 // 棋子类型得分，参数可以调整
+// 拆分远近活三，远中近活二
 const int LIVEFOURMARK = 100000;
 const int SLEEPFOURMARK = 50000;
-const int LIVETHREEMARK = 10000;
+const int NEARLIVETHREEMARK = 10200;
+const int FARLIVETHREEMARK = 10000;
 const int SLEEPTHREEMARK = 5000;
-const int LIVETWOMARK = 1000;
+const int NEARLIVETWOMARK = 1200;
+const int MIDLIVETWOMARK = 1050;
+const int FARLIVETWOMARK = 1000;
 const int SLEEPTWOMARK = 500;
 const int ONEMARK = 1;
 
