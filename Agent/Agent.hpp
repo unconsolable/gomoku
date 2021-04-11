@@ -67,14 +67,15 @@ void Agent::Run() {
     reader.parse(str, input);
     // 分析自己收到的输入和自己过往的输出，并恢复状态
     int turnID = input["responses"].size();
+    DetermineBlack(input, turnID);
     for (int i = 0; i < turnID; i++) {
         myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
-                        input["requests"][i]["y"].asInt(), BLACK);
+                        input["requests"][i]["y"].asInt(), !color);
         myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
-                        input["responses"][i]["y"].asInt(), WHITE);
+                        input["responses"][i]["y"].asInt(), color);
     }
     myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
-                    input["requests"][turnID]["y"].asInt(), BLACK);
+                    input["requests"][turnID]["y"].asInt(), !color);
     DetermineBlack(input, turnID);
     auto [x, y, ok] = myBoard.GreedyPlace(color);
     if (ok) {

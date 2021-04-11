@@ -1,8 +1,8 @@
 #define ONLINE_JUDGE
 #define RELEASE
 #ifdef RELEASE
-#pragma GCC optimize(2)
-#pragma GCC optimize(3, "Ofast", "inline")
+// #pragma GCC optimize(2)
+// #pragma GCC optimize(3, "Ofast", "inline")
 #endif
 #include <bits/stdc++.h>
 using namespace std;
@@ -145,8 +145,7 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
     // 鼓励在中心位置放子
     auto CentralMark = [](int x, int y) { return 14 - abs(x - 7) - abs(y - 7); };
     // 考虑放子对自己和对手的影响
-    int maxMark = MarkOfPoint(v[0] / 15, v[0] % 15, color) +
-                  CentralMark(v[0] / 15, v[0] % 15),
+    int maxMark = MarkOfPoint(v[0] / 15, v[0] % 15, color) + CentralMark(v[0] / 15, v[0] % 15),
         maxPoint = v[0];
     for (size_t id = 1; id < v.size(); id++) {
         auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, color) +
@@ -203,7 +202,7 @@ int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
     int unitOffsetY[] = {1, 1, 0, -1, -1, -1, 0, 1};
     curX = curX + unitOffsetX[direction] * offset;
     curY = curY + unitOffsetY[direction] * offset;
-    if (curX < 0 || curX > SIZE || curY < 0 || curY > SIZE) {
+    if (curX < 0 || curX >= SIZE || curY < 0 || curY >= SIZE) {
         return INVALID;
     }
     return boardState[curX][curY];
@@ -229,42 +228,38 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
             total += LIVEFOURMARK;
         }
         // 眠四SLEEPFOUR, #11112(3), 1#111, 11#11
-        if (RelativePosVal(curX, curY, i, 1) == playerColor &&
-            RelativePosVal(curX, curY, i, 2) == playerColor &&
-            RelativePosVal(curX, curY, i, 3) == playerColor &&
-            RelativePosVal(curX, curY, i, 4) == playerColor &&
-            (RelativePosVal(curX, curY, i, 5) == !playerColor ||
-             RelativePosVal(curX, curY, i, 5) == INVALID)) {
+        else if (RelativePosVal(curX, curY, i, 1) == playerColor &&
+                 RelativePosVal(curX, curY, i, 2) == playerColor &&
+                 RelativePosVal(curX, curY, i, 3) == playerColor &&
+                 RelativePosVal(curX, curY, i, 4) == playerColor) {
             // cout << "SLEEPFOURMARK ";
             total += SLEEPFOURMARK;
-        }
-        if (RelativePosVal(curX, curY, i, -1) == playerColor &&
-            RelativePosVal(curX, curY, i, 1) == playerColor &&
-            RelativePosVal(curX, curY, i, 2) == playerColor &&
-            RelativePosVal(curX, curY, i, 3) == playerColor) {
+        } else if (RelativePosVal(curX, curY, i, -1) == playerColor &&
+                   RelativePosVal(curX, curY, i, 1) == playerColor &&
+                   RelativePosVal(curX, curY, i, 2) == playerColor &&
+                   RelativePosVal(curX, curY, i, 3) == playerColor) {
             // cout << "SLEEPFOURMARK ";
             total += SLEEPFOURMARK;
-        }
-        if (RelativePosVal(curX, curY, i, -2) == playerColor &&
-            RelativePosVal(curX, curY, i, -1) == playerColor &&
-            RelativePosVal(curX, curY, i, 1) == playerColor &&
-            RelativePosVal(curX, curY, i, 2) == playerColor) {
+        } else if (RelativePosVal(curX, curY, i, -2) == playerColor &&
+                   RelativePosVal(curX, curY, i, -1) == playerColor &&
+                   RelativePosVal(curX, curY, i, 1) == playerColor &&
+                   RelativePosVal(curX, curY, i, 2) == playerColor) {
             // cout << "SLEEPFOURMARK ";
             total += SLEEPFOURMARK;
         }
         // 远活三FARLIVETHREE, #0111
-        if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
-            RelativePosVal(curX, curY, i, 2) == playerColor &&
-            RelativePosVal(curX, curY, i, 3) == playerColor &&
-            RelativePosVal(curX, curY, i, 4) == playerColor) {
+        else if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
+                 RelativePosVal(curX, curY, i, 2) == playerColor &&
+                 RelativePosVal(curX, curY, i, 3) == playerColor &&
+                 RelativePosVal(curX, curY, i, 4) == playerColor) {
             // cout << "LIVETHREEMARK ";
             total += FARLIVETHREEMARK;
         }
         // 近活三NEARLIVETHREE, 0#111, #1110
-        if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
-            RelativePosVal(curX, curY, i, 1) == playerColor &&
-            RelativePosVal(curX, curY, i, 2) == playerColor &&
-            RelativePosVal(curX, curY, i, 3) == playerColor) {
+        else if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+                 RelativePosVal(curX, curY, i, 1) == playerColor &&
+                 RelativePosVal(curX, curY, i, 2) == playerColor &&
+                 RelativePosVal(curX, curY, i, 3) == playerColor) {
             // cout << "LIVETHREEMARK ";
             total += NEARLIVETHREEMARK;
         } else if (RelativePosVal(curX, curY, i, 4) == UNPLACE &&
@@ -274,25 +269,25 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
             total += NEARLIVETHREEMARK;
         }
         // 眠三SLEEPTHREE, 1#11
-        if (RelativePosVal(curX, curY, i, -1) == playerColor &&
-            RelativePosVal(curX, curY, i, 1) == playerColor &&
-            RelativePosVal(curX, curY, i, 2) == playerColor) {
+        else if (RelativePosVal(curX, curY, i, -1) == playerColor &&
+                 RelativePosVal(curX, curY, i, 1) == playerColor &&
+                 RelativePosVal(curX, curY, i, 2) == playerColor) {
             // cout << "SLEEPTHREEMARK ";
             total += SLEEPTHREEMARK;
         }
-        // 远活二 #0011 
-        if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
-            RelativePosVal(curX, curY, i, 2) == UNPLACE &&
-            RelativePosVal(curX, curY, i, 3) == playerColor &&
-            RelativePosVal(curX, curY, i, 4) == playerColor) {
+        // 远活二 #0011
+        else if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
+                 RelativePosVal(curX, curY, i, 2) == UNPLACE &&
+                 RelativePosVal(curX, curY, i, 3) == playerColor &&
+                 RelativePosVal(curX, curY, i, 4) == playerColor) {
             // cout << "LIVETWOMARK ";
             total += FARLIVETWOMARK;
         }
         // 中活二 0#011, #0110
-        if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
-            RelativePosVal(curX, curY, i, 1) == UNPLACE &&
-            RelativePosVal(curX, curY, i, 2) == playerColor &&
-            RelativePosVal(curX, curY, i, 3) == playerColor) {
+        else if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+                 RelativePosVal(curX, curY, i, 1) == UNPLACE &&
+                 RelativePosVal(curX, curY, i, 2) == playerColor &&
+                 RelativePosVal(curX, curY, i, 3) == playerColor) {
             // cout << "LIVETWOMARK ";
             total += MIDLIVETWOMARK;
         } else if (RelativePosVal(curX, curY, i, 4) == UNPLACE &&
@@ -302,31 +297,31 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
             total += MIDLIVETWOMARK;
         }
         // 近活二 00#11, 0#110, #1100
-        if (RelativePosVal(curX, curY, i, -2) == UNPLACE &&
-            RelativePosVal(curX, curY, i, -1) == UNPLACE &&
-            RelativePosVal(curX, curY, i, 1) == playerColor &&
-            RelativePosVal(curX, curY, i, 2) == playerColor) {
+        else if (RelativePosVal(curX, curY, i, -2) == UNPLACE &&
+                 RelativePosVal(curX, curY, i, -1) == UNPLACE &&
+                 RelativePosVal(curX, curY, i, 1) == playerColor &&
+                 RelativePosVal(curX, curY, i, 2) == playerColor) {
             // cout << "LIVETWOMARK ";
             total += NEARLIVETWOMARK;
         } else if (RelativePosVal(curX, curY, i, 3) == UNPLACE &&
                    RelativePosVal(curX, curY, i, -1) == UNPLACE &&
                    RelativePosVal(curX, curY, i, 1) == playerColor &&
                    RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += NEARLIVETHREEMARK;
+            total += NEARLIVETWOMARK;
         } else if (RelativePosVal(curX, curY, i, 3) == UNPLACE &&
                    RelativePosVal(curX, curY, i, 4) == UNPLACE &&
                    RelativePosVal(curX, curY, i, 1) == playerColor &&
                    RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += NEARLIVETHREEMARK;
+            total += NEARLIVETWOMARK;
         }
         // 眠二 1#1
-        if (RelativePosVal(curX, curY, i, -1) == playerColor &&
-            RelativePosVal(curX, curY, i, 1) == playerColor) {
+        else if (RelativePosVal(curX, curY, i, -1) == playerColor &&
+                 RelativePosVal(curX, curY, i, 1) == playerColor) {
             // cout << "SLEEPTWOMARK ";
             total += SLEEPTWOMARK;
         }
         // 只认为0000#1为活一
-        if ((RelativePosVal(curX, curY, i, -3) == UNPLACE) +
+        else if ((RelativePosVal(curX, curY, i, -3) == UNPLACE) +
                 (RelativePosVal(curX, curY, i, -2) == UNPLACE) +
                 (RelativePosVal(curX, curY, i, -1) == UNPLACE) +
                 (RelativePosVal(curX, curY, i, 1) == playerColor) ==
@@ -405,15 +400,15 @@ void Agent::Run() {
     reader.parse(str, input);
     // 分析自己收到的输入和自己过往的输出，并恢复状态
     int turnID = input["responses"].size();
-    for (int i = 0; i < turnID; i++) {
-        myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
-                        input["requests"][i]["y"].asInt(), BLACK);
-        myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
-                        input["responses"][i]["y"].asInt(), WHITE);
-    }
-    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
-                    input["requests"][turnID]["y"].asInt(), BLACK);
     DetermineBlack(input, turnID);
+    for (int i = 0; i < turnID; i++) {
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(), input["requests"][i]["y"].asInt(),
+                        !color);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(), input["responses"][i]["y"].asInt(),
+                        color);
+    }
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(), input["requests"][turnID]["y"].asInt(),
+                    !color);
     auto [x, y, ok] = myBoard.GreedyPlace(color);
     if (ok) {
         Json::Value ret;

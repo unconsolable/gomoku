@@ -5,6 +5,7 @@ CXXFLAGS = ${STD} ${INC}
 EXEC = main
 SRC = main.cpp
 SRCSINGLE = main_single.cpp
+EXECSINGLE = main_single
 
 debug:
 	$(CC) $(CXXFLAGS) -g -o $(EXEC) $(SRC)
@@ -13,4 +14,4 @@ release:
 oj:
 	$(CC) $(CXXFLAGS) -o $(EXEC) -DONLINE_JUDGE $(SRC)
 ojsingle:
-	$(CC) $(CXXFLAGS) -o $(EXEC) $(SRCSINGLE)
+	$(CC) $(CXXFLAGS) -g -o $(EXECSINGLE) $(SRCSINGLE)
