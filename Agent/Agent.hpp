@@ -4,6 +4,7 @@
 #include <bits/stdc++.h>
 
 #include "Board.hpp"
+#include "Position.hpp"
 #include "jsoncpp/json.h"
 #define UNUSED(x, y) (x) += (y)
 //#include "Timer.hpp"
@@ -19,6 +20,11 @@ struct Agent {
     Board myBoard;
     // 最优落子
     int bestDropId;
+    // 落子位置和对应的权重, 用于在set中查找.
+    // -1表示有棋子的点
+    int weight[2][225];
+    // 按照权排序的落子位置集合
+    set<Position> nextPos[2];
 
     // 运行
     void Run();
@@ -26,6 +32,13 @@ struct Agent {
     void Init();
     // 判断AI是否为先手
     void DetermineBlack(const Json::Value &, int);
+    // 局面估值
+    int Evaluate(int);
+    // 更改一个点的颜色, 同时更新附近的9*9格子内的空闲点权值信息
+    // 后续优化可以尝试减少更改的范围
+    void Update(int x, int y, int color);
+    // 局面预处理, 初始化nextPos和weight数组
+    void Preplay();
     // MinMaxSearch()
     // SimpleEvaluate() 用于启发式搜索计算得分
 };
@@ -69,13 +82,13 @@ void Agent::Run() {
     int turnID = input["responses"].size();
     DetermineBlack(input, turnID);
     for (int i = 0; i < turnID; i++) {
-        myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
-                        input["requests"][i]["y"].asInt(), !color);
-        myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
-                        input["responses"][i]["y"].asInt(), color);
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(), input["requests"][i]["y"].asInt(),
+                        !color);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(), input["responses"][i]["y"].asInt(),
+                        color);
     }
-    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
-                    input["requests"][turnID]["y"].asInt(), !color);
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(), input["requests"][turnID]["y"].asInt(),
+                    !color);
     DetermineBlack(input, turnID);
     auto [x, y, ok] = myBoard.GreedyPlace(color);
     if (ok) {
@@ -106,6 +119,58 @@ void Agent::DetermineBlack(const Json::Value &input, int turnID) {
         (input["requests"][turnID]["x"].asInt() == -1 &&
          input["requests"][turnID]["y"].asInt() == -1)) {
         color = BLACK;
+    }
+}
+
+void Agent::Preplay() {
+    // 初始化weight和nextPos
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            // 如果位置上已有棋子, 标记权重为-1
+            // 否则计算权重, 并分别存放在weight和nextPos中
+            if (myBoard.boardState[i][j] != UNPLACE) {
+                weight[BLACK][i * 15 + j] = weight[WHITE][i * 15 + j] = -1;
+            } else {
+                weight[BLACK][i * 15 + j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[WHITE][i * 15 + j] = myBoard.MarkOfPoint(i, j, WHITE);
+                nextPos[BLACK].insert(Position{i, j, weight[BLACK][i * 15 + j]});
+                nextPos[WHITE].insert(Position{i, j, weight[WHITE][i * 15 + j]});
+            }
+        }
+    }
+}
+
+void Agent::Update(int x, int y, int color) {
+    // 检查是否均为或均不为未放置
+    assert(!(weight[BLACK][x * 15 + y] == -1) ^ (weight[WHITE][x * 15 + y] == -1));
+    // 原始为未放置=>清除点在weight和nextPos中的记录
+    if (weight[BLACK][x * 15 + y] != -1 && weight[WHITE][x * 15 + y] != -1) {
+        nextPos[BLACK].erase(Position{x, y, weight[BLACK][x * 15 + y]});
+        nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});
+        weight[BLACK][x * 15 + y] = weight[WHITE][x * 15 + y] = -1;
+    }
+    myBoard.boardState[x][y] = color;
+    // 更改为未放置=>增加点在weight和nextPos中的记录
+    if (color == UNPLACE) {
+        weight[BLACK][x * 15 + y] = myBoard.MarkOfPoint(x, y, BLACK);
+        weight[WHITE][x * 15 + y] = myBoard.MarkOfPoint(x, y, WHITE);
+        nextPos[BLACK].insert(Position{x, y, weight[BLACK][x * 15 + y]});
+        nextPos[WHITE].insert(Position{x, y, weight[WHITE][x * 15 + y]});
+    }
+    // 修改完成后, 在9*9范围内修改空闲点的权值
+    for (int i = max(0, x - 4); i < min(15, x + 4); i++) {
+        for (int j = max(0, y - 4); j < min(15, y + 4); j++) {
+            if (i != x && j != y && myBoard.boardState[i][j] == UNPLACE) {
+                // 删除现存权值记录
+                nextPos[BLACK].erase(Position{x, y, weight[BLACK][x * 15 + y]});
+                nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});
+                // 求出新权值记录并保存
+                weight[BLACK][x * 15 + y] = myBoard.MarkOfPoint(x, y, BLACK);
+                weight[WHITE][x * 15 + y] = myBoard.MarkOfPoint(x, y, WHITE);
+                nextPos[BLACK].insert(Position{x, y, weight[BLACK][x * 15 + y]});
+                nextPos[WHITE].insert(Position{x, y, weight[WHITE][x * 15 + y]});
+            }
+        }
     }
 }
 
