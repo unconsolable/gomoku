@@ -174,4 +174,9 @@ void Agent::Update(int x, int y, int color) {
     }
 }
 
+int Agent::Evaluate(int color) {
+    // 返回对于该颜色而言权值最高的点对应的权
+    return nextPos[color].begin()->w;
+}
+
 #endif
