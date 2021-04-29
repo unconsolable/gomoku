@@ -58,10 +58,12 @@ int Agent::MinMaxSearch(int depth, int alpha, int beta, bool curColor) {
     // 对所有可能局面进行搜索
     int cntBranch = 0;
     set<Position> tmp;
-    for(auto& pos: nextPos[curColor]) {
+    auto pos = nextPos[curColor].begin();
+    for(int i = 0; i < SEARCHCNT[depth]; i++) {
         // if(cntBranch > BRANCH_LIMIT) break;
         cntBranch++;
-        tmp.insert(pos);
+        tmp.insert(*pos);
+        pos++;
     }
     for(auto& pos: tmp) {
         int x = pos.x, y = pos.y;
@@ -70,7 +72,7 @@ int Agent::MinMaxSearch(int depth, int alpha, int beta, bool curColor) {
         int tmpId = lastDropId;
         lastDropId = x * 15 + y;
         // 继续搜索
-        int val = -MinMaxSearch(depth - 1, -beta, -alpha, curColor);
+        int val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
         // 取消落子 更新得分
         Update(x, y, UNPLACE);
         // 恢复上一次落子位置

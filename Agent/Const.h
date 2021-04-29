@@ -18,7 +18,7 @@ const int BEST_UNDEFINED = -1;
 const int BRANCH_LIMIT = 32;
 
 // 搜索深度默认为 6, 优化后再升级
-const int SEARCH_DEPTH = 2;
+const int SEARCH_DEPTH = 6;
 
 // 各局面价值表，待完善
 const int valueTable = {0};
@@ -48,4 +48,5 @@ const int FARLIVETWOMARK = 1000;
 const int SLEEPTWOMARK = 500;
 const int ONEMARK = 1;
 
+int SEARCHCNT[] = {0, 2, 3, 3, 4, 7, 10};
 #endif
