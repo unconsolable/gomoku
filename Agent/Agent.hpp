@@ -69,7 +69,7 @@ int Agent::MinMaxSearch(int depth, int alpha, int beta, bool curColor) {
     };
     sort(v, v + cnt + 1, cmp);
     // 对所有可能局面进行搜索
-    for (size_t i = 0; i <= min(32, cnt); i++) {
+    for (size_t i = 0; i <= static_cast<size_t>(min(32, cnt)); i++) {
         // 落子 更新得分
         Update(v[i] / 15, v[i] % 15, curColor);
         // 更改上一次落子位置
@@ -105,7 +105,7 @@ void Agent::Run() {
         int x, y;
         cout << "Your drop position: ";
         cin >> x >> y;
-        myBoard.PlaceAt(x, y, BLACK);
+        Update(x, y, BLACK);
         if (myBoard.CheckFive(BLACK)) {
             myBoard.Show();
             cout << "you win" << endl;
@@ -118,7 +118,7 @@ void Agent::Run() {
         MinMaxSearch(SEARCH_DEPTH, -INF, INF, WHITE);
         myTimer->getTimePass(__LINE__);
         cout << "Opponent: ";
-        myBoard.PlaceAt(bestDropId / 15, bestDropId % 15, WHITE);
+        Update(bestDropId / 15, bestDropId % 15, WHITE);
         cout << "Score: " << bestScore << endl;
         // UNUSED(aix, aiy);
         myBoard.Show();
@@ -225,15 +225,15 @@ void Agent::Update(int x, int y, int color) {
         for (int j = max(0, y - 4); j < min(15, y + 4); j++) {
             if (i != x && j != y && myBoard.boardState[i][j] == UNPLACE) {
                 // 删除现存权值记录
-                nextPos[BLACK].erase(Position{x, y, weight[BLACK][x * 15 + y]});
-                nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});
+                nextPos[BLACK].erase(Position{i, j, weight[BLACK][i * 15 + j]});
+                nextPos[WHITE].erase(Position{i, j, weight[WHITE][i * 15 + j]});
                 // 求出新权值记录并保存
-                weight[BLACK][x * 15 + y] = myBoard.MarkOfPoint(x, y, BLACK);
-                weight[WHITE][x * 15 + y] = myBoard.MarkOfPoint(x, y, WHITE);
+                weight[BLACK][i * 15 + j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[WHITE][i * 15 + j] = myBoard.MarkOfPoint(i, j, WHITE);
                 nextPos[BLACK].insert(
-                    Position{x, y, weight[BLACK][x * 15 + y]});
+                    Position{i, j, weight[BLACK][i * 15 + j]});
                 nextPos[WHITE].insert(
-                    Position{x, y, weight[WHITE][x * 15 + y]});
+                    Position{i, j, weight[WHITE][i * 15 + j]});
             }
         }
     }
