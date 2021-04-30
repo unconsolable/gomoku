@@ -26,7 +26,10 @@ struct Board {
     // 取消落子
     void UnPlaceAt(int, int);
     // 检查是否为五子
-    bool CheckFive(int color);
+    // 全局检查
+    bool CheckFive(int);
+    // 上次落子位置周围检查
+    bool CheckFive(int, int, bool);
     // 更新每个位置得分
     void CalcValue();
     // 和当前点相对位置的格子值
@@ -76,11 +79,9 @@ tuple<int, int, bool> Board::RandomPlace(int color) {
     vector<int> v;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == -1)
-                v.push_back(i * 15 + j);
+            if (boardState[i][j] == -1) v.push_back(i * 15 + j);
     }
-    if (!v.size())
-        return {-1, -1, false};
+    if (!v.size()) return {-1, -1, false};
     int id = v[rand() % v.size()];
     PlaceAt(id / 15, id % 15, color);
     return {id / 15, id % 15, true};
@@ -90,20 +91,22 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
     vector<int> v;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == UNPLACE)
-                v.push_back(i * 15 + j);
+            if (boardState[i][j] == UNPLACE) v.push_back(i * 15 + j);
     }
-    if (!v.size())
-        return {-1, -1, false};
+    if (!v.size()) return {-1, -1, false};
     // 鼓励在中心位置放子
-    auto CentralMark = [](int x, int y) { return 14 - abs(x - 7) - abs(y - 7); };
+    auto CentralMark = [](int x, int y) {
+        return 14 - abs(x - 7) - abs(y - 7);
+    };
     // 考虑放子对自己和对手的影响
-    int maxMark = MarkOfPoint(v[0] / 15, v[0] % 15, color) + CentralMark(v[0] / 15, v[0] % 15),
+    int maxMark = MarkOfPoint(v[0] / 15, v[0] % 15, color) +
+                  CentralMark(v[0] / 15, v[0] % 15),
         maxPoint = v[0];
     for (size_t id = 1; id < v.size(); id++) {
-        auto curMark =
-            MarkOfPoint(v[id] / 15, v[id] % 15, color) + CentralMark(v[id] / 15, v[id] % 15);
-        // cout << "curMark: " << curMark << "x: " << v[id] / 15 << "y: " << v[id] % 15 << "\n";
+        auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, color) +
+                       CentralMark(v[id] / 15, v[id] % 15);
+        // cout << "curMark: " << curMark << "x: " << v[id] / 15 << "y: " <<
+        // v[id] % 15 << "\n";
         if (curMark > maxMark) {
             maxMark = curMark;
             maxPoint = v[id];
@@ -112,8 +115,8 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
     // try to fail the oppoent to achieve more than live three
     int avoidOppoent = -1, oppoentMark = -1;
     for (size_t id = 0; id < v.size(); id++) {
-        auto curMark =
-            MarkOfPoint(v[id] / 15, v[id] % 15, !color) + CentralMark(v[id] / 15, v[id] % 15);
+        auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, !color) +
+                       CentralMark(v[id] / 15, v[id] % 15);
         if (curMark > SLEEPTHREEMARK && curMark > oppoentMark) {
             avoidOppoent = v[id];
             oppoentMark = curMark;
@@ -129,8 +132,7 @@ tuple<int, int, bool> Board::GreedyPlace(int color) {
 bool Board::CheckFive(int color) {
     for (int i = 0; i < SIZE; i++)
         for (int j = 0; j < SIZE; j++) {
-            if (boardState[i][j] != color)
-                continue;
+            if (boardState[i][j] != color) continue;
             // 遍历每个位置
             for (int k = 0; k < 4; k++) {
                 int ti = i, tj = j;
@@ -138,15 +140,27 @@ bool Board::CheckFive(int color) {
                 for (int s = 1; s <= 4; s++) {
                     ti += dr[k];
                     tj += dc[k];
-                    if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE)
-                        continue;
-                    if (boardState[ti][tj] != color)
-                        break;
-                    if (s == 4)
-                        return true;
+                    if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) continue;
+                    if (boardState[ti][tj] != color) break;
+                    if (s == 4) return true;
                 }
             }
         }
+    return false;
+}
+
+bool Board::CheckFive(int i, int j, bool color) {
+    for (int k = 0; k < 4; k++) {
+        int ti = i, tj = j;
+        // 遍历每个棋子
+        for (int s = 1; s <= 4; s++) {
+            ti += dr[k];
+            tj += dc[k];
+            if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) continue;
+            if (boardState[ti][tj] != color) break;
+            if (s == 4) return true;
+        }
+    }
     return false;
 }
 
