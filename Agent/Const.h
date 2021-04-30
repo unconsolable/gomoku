@@ -9,6 +9,14 @@
 typedef int_fast8_t Byte;
 typedef uint_fast8_t UByte;
 
+const int INF = 1E9;
+
+// bestDropId 表示未设置
+const int BEST_UNDEFINED = -1;
+
+// 搜索深度默认为 6, 优化后再升级
+const int SEARCH_DEPTH = 2;
+
 // 各局面价值表，待完善
 const int valueTable = {0};
 // 棋盘大小
