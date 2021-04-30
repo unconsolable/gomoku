@@ -8,6 +8,7 @@
 using namespace std;
 
 int main() {
+    srand(time(0));
     ios::sync_with_stdio(false);
     auto ai = new Agent;
     ai->Run();
