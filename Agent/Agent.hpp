@@ -53,42 +53,37 @@ int Agent::MinMaxSearch(int depth, int alpha, int beta, bool curColor) {
         return -INF;
     // 层数用完，估值返回
     if (depth <= 0) return Evaluate(curColor);
-    // v 存储所有可落子位置
-    int v[SIZE * SIZE];
-    // 落子位置总数
-    int cnt = -1;
-    for (int r = 0; r < SIZE; r++)
-        for (int c = 0; c < SIZE; c++)
-            if (myBoard.boardState[r][c] == UNPLACE) v[++cnt] = r * 15 + c;
     // 无子可走
-    if (cnt == -1) return -INF;
-    // 按优先级排序
-    auto cmp = [&](int& a, int& b) -> bool {
-        // 排序方式欠考虑
-        return weight[curColor][a] > weight[curColor][b];
-    };
-    sort(v, v + cnt + 1, cmp);
+    if(!nextPos[color].size()) return -INF;
     // 对所有可能局面进行搜索
-    for (size_t i = 0; i <= static_cast<size_t>(min(32, cnt)); i++) {
-        // 落子 更新得分
-        Update(v[i] / 15, v[i] % 15, curColor);
+    int cntBranch = 0;
+    set<Position> tmp;
+    for(auto& pos: nextPos[curColor]) {
+        // if(cntBranch > BRANCH_LIMIT) break;
+        cntBranch++;
+        tmp.insert(pos);
+    }
+    for(auto& pos: tmp) {
+        int x = pos.x, y = pos.y;
+        Update(x, y, curColor);
         // 更改上一次落子位置
         int tmpId = lastDropId;
-        lastDropId = v[i];
+        lastDropId = x * 15 + y;
         // 继续搜索
         int val = -MinMaxSearch(depth - 1, -beta, -alpha, curColor);
         // 取消落子 更新得分
-        Update(v[i] / 15, v[i] % 15, UNPLACE);
+        Update(x, y, UNPLACE);
         // 恢复上一次落子位置
         lastDropId = tmpId;
         if (val >= beta) {
-            if (depth == SEARCH_DEPTH) bestScore = val, bestDropId = v[i];
+            if (depth == SEARCH_DEPTH) bestScore = val, bestDropId = x * 15 + y;
             return val;
         }
         if (val > alpha) alpha = val;  // bestDropId
         if (depth == SEARCH_DEPTH &&
             (val > bestScore || bestDropId == BEST_UNDEFINED))
-            bestScore = val, bestDropId = v[i];
+            bestScore = val, bestDropId = x * 15 + y;
+
     }
     return alpha;
 }
