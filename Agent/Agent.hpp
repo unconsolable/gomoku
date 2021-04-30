@@ -100,6 +100,8 @@ void Agent::Run() {
     myBoard.Show();
     while (true) {
         Preplay();
+        lastDropId = bestDropId = -1;
+        bestScore = -INF;
         int x, y;
         cout << "Your drop position: ";
         cin >> x >> y;
@@ -109,7 +111,6 @@ void Agent::Run() {
             cout << "you win" << endl;
             break;
         }
-
         myTimer = new Timer;
         myTimer->prepare(__LINE__);
         // auto [aix, aiy, ok] = myBoard.RandomPlace(color);
