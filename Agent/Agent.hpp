@@ -220,7 +220,7 @@ void Agent::Update(int x, int y, int color) {
     // 修改完成后, 在9*9范围内修改空闲点的权值
     for (int i = max(0, x - 4); i < min(15, x + 4); i++) {
         for (int j = max(0, y - 4); j < min(15, y + 4); j++) {
-            if (i != x && j != y && myBoard.boardState[i][j] == UNPLACE) {
+            if ((i != x || j != y) && myBoard.boardState[i][j] == UNPLACE) {
                 // 删除现存权值记录
                 nextPos[BLACK].erase(Position{i, j, weight[BLACK][i * 15 + j]});
                 nextPos[WHITE].erase(Position{i, j, weight[WHITE][i * 15 + j]});
