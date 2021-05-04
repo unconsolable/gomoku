@@ -3,6 +3,8 @@
 #include <bits/stdc++.h>
 // 放置一些公用常量，不要格式化
 
+#define debug(x) cerr << #x << " = " << x << endl
+
 //#define ONLINE_JUDGE
 
 // 为加快运行速度，用以下类型代替int(如果不超出范围)
@@ -19,7 +21,7 @@ const int BEST_UNDEFINED = -1;
 const int BRANCH_LIMIT = 32;
 
 // 搜索深度默认为 6, 优化后再升级
-const int SEARCH_DEPTH = 4;
+const int SEARCH_DEPTH = 6;
 
 // 各局面价值表，待完善
 const int valueTable = {0};
@@ -34,14 +36,15 @@ const int dc[] = {1, 1, 0, -1};
 const int UNPLACE = -1;
 const int WHITE = 0;
 const int BLACK = 1;
+const int MAX = 2;
 const int INVALID = -2;
 
 // 棋子类型得分，参数可以调整
 // 拆分远近活三，远中近活二
-const int LIVEFOURMARK = 100000;
-const int SLEEPFOURMARK = 50000;
-const int NEARLIVETHREEMARK = 10200;
-const int FARLIVETHREEMARK = 10000;
+const int LIVEFOURMARK = 2000000;
+const int SLEEPFOURMARK = 1000000;
+const int NEARLIVETHREEMARK = 102000;
+const int FARLIVETHREEMARK = 100000;
 const int SLEEPTHREEMARK = 5000;
 const int NEARLIVETWOMARK = 1200;
 const int MIDLIVETWOMARK = 1050;
