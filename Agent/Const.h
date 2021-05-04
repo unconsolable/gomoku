@@ -25,6 +25,9 @@ const int SEARCH_DEPTH = 6;
 
 const int INF = 1E8;
 
+
+const int INF = 1E8;
+
 // 各局面价值表，待完善
 // const int valueTable = {0};
 // 棋盘大小
