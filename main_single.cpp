@@ -69,8 +69,6 @@ int SEARCHCNT[] = {0, 2, 3, 3, 4, 7, 10};
 
 #include <bits/stdc++.h>
 
-#include "Const.h"
-
 using namespace std;
 
 struct Board {
@@ -368,7 +366,6 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
 #endif
 // #include <Position.hpp>
 #ifndef POSITION_H
-#include "Const.h"
 
 struct Position {
     int x, y, w;
@@ -386,9 +383,6 @@ bool operator<(const Position& lhs, const Position& rhs) {
 
 #include <bits/stdc++.h>
 
-#include "Board.hpp"
-#include "Position.hpp"
-#include "Timer.hpp"
 #include "jsoncpp/json.h"
 #define UNUSED(x, y) (x) += (y)
 
@@ -397,7 +391,7 @@ struct Agent {
     // 默认后手
     int color = WHITE;
     //计时器
-    Timer* myTimer = nullptr;
+    // Timer* myTimer = nullptr;
     // 棋盘
     Board myBoard;
     // 最优落子
@@ -549,7 +543,7 @@ void Agent::Init() {
 }
 
 void Agent::DetermineBlack(const Json::Value &input) {
-    if (input["requests"][0]["x"].asInt() == -1 && input["requests"][0]["y"].asInt() == -1) {
+    if (input["requests"][0u]["x"].asInt() == -1 && input["requests"][0u]["y"].asInt() == -1) {
         color = BLACK;
     } else {
         color = WHITE;
@@ -590,7 +584,7 @@ void Agent::Update(int x, int y, int color) {
         assert(nextPos[MAX].count(
                    Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])}) == 1);
         assert(nextPos[WHITE].count(Position{x, y, weight[WHITE][x * 15 + y]}) == 1);
-        assert(nextPos[MAX].count(Position{x, y, weight[WHITE][x * 15 + y]}) == 1);
+        assert(nextPos[BLACK].count(Position{x, y, weight[BLACK][x * 15 + y]}) == 1);
 #endif
         nextPos[MAX].erase(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
         nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});

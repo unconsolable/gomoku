@@ -166,7 +166,7 @@ void Agent::Init() {
 }
 
 void Agent::DetermineBlack(const Json::Value &input) {
-    if (input["requests"][0]["x"].asInt() == -1 && input["requests"][0]["y"].asInt() == -1) {
+    if (input["requests"][0u]["x"].asInt() == -1 && input["requests"][0u]["y"].asInt() == -1) {
         color = BLACK;
     } else {
         color = WHITE;
@@ -205,9 +205,9 @@ void Agent::Update(int x, int y, int color) {
     if (weight[BLACK][x * 15 + y] != -1 && weight[WHITE][x * 15 + y] != -1) {
 #ifndef ONLINE_JUDGE
         assert(nextPos[MAX].count(
-                   {x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])}) == 1);
+                   Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])}) == 1);
         assert(nextPos[WHITE].count(Position{x, y, weight[WHITE][x * 15 + y]}) == 1);
-        assert(nextPos[MAX].count(Position{x, y, weight[WHITE][x * 15 + y]}) == 1);
+        assert(nextPos[BLACK].count(Position{x, y, weight[BLACK][x * 15 + y]}) == 1);
 #endif
         nextPos[MAX].erase(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
         nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});
