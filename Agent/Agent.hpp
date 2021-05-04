@@ -6,7 +6,7 @@
 #include "Board.hpp"
 #include "Position.hpp"
 #include "Timer.hpp"
-// #include "jsoncpp/json.h"
+#include "jsoncpp/json.h"
 #define UNUSED(x, y) (x) += (y)
 
 using namespace std;
@@ -34,7 +34,7 @@ struct Agent {
     // 初始化局面
     void Init();
     // 判断AI是否为先手
-    // void DetermineBlack(const Json::Value &, int);
+    void DetermineBlack(const Json::Value &);
     // 局面估值
     LL Evaluate(int);
     // 更改一个点的颜色, 同时更新附近的9*9格子内的空闲点权值信息
@@ -59,7 +59,7 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
     set<Position> tmp;
     auto pos = nextPos[MAX].begin();
     // 部分拷贝
-    for(int i = 0; i < SEARCHCNT[depth]; i++) {
+    for(int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end(); i++) {
         tmp.insert(*pos);
         pos++;
     }
@@ -124,7 +124,6 @@ void Agent::Run() {
         debug(nextPos[BLACK].size());
         debug(nextPos[MAX].size());
         debug(bestScore);
-        // UNUSED(aix, aiy);
         myBoard.Show();
         // if (!ok) {
         //    break;
@@ -143,29 +142,19 @@ void Agent::Run() {
     reader.parse(str, input);
     // 分析自己收到的输入和自己过往的输出，并恢复状态
     int turnID = input["responses"].size();
-    DetermineBlack(input, turnID);
+    DetermineBlack(input);
+    Preplay();
     for (int i = 0; i < turnID; i++) {
-        myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
-                        input["requests"][i]["y"].asInt(), !color);
-        myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
-                        input["responses"][i]["y"].asInt(), color);
+        Update(input["requests"][i]["x"].asInt(), input["requests"][i]["y"].asInt(), !color);
+        Update(input["responses"][i]["x"].asInt(), input["responses"][i]["y"].asInt(), color);
     }
-    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
-                    input["requests"][turnID]["y"].asInt(), !color);
-    DetermineBlack(input, turnID);
-    auto [x, y, ok] = myBoard.GreedyPlace(color);
-    if (ok) {
-        Json::Value ret;
-        ret["response"]["x"] = x;
-        ret["response"]["y"] = y;
-        if (color == BLACK) {
-            ret["data"] = "black";
-        } else {
-            ret["data"] = "white";
-        }
-        Json::FastWriter writer;
-        cout << writer.write(ret) << endl;
-    }
+    Update(input["requests"][turnID]["x"].asInt(), input["requests"][turnID]["y"].asInt(), !color);
+    MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
+    Json::Value ret;
+    ret["response"]["x"] = bestDropId / 15;
+    ret["response"]["y"] = bestDropId % 15;
+    Json::FastWriter writer;
+    cout << writer.write(ret) << endl;
 #endif
 }
 
@@ -176,15 +165,13 @@ void Agent::Init() {
     // 本地测试不需要恢复，直接跳过
 }
 
-/*
-void Agent::DetermineBlack(const Json::Value &input, int turnID) {
-    if ((turnID != 0 && input["data"].asString() == "black") ||
-        (input["requests"][turnID]["x"].asInt() == -1 &&
-         input["requests"][turnID]["y"].asInt() == -1)) {
+void Agent::DetermineBlack(const Json::Value &input) {
+    if (input["requests"][0]["x"].asInt() == -1 && input["requests"][0]["y"].asInt() == -1) {
         color = BLACK;
+    } else {
+        color = WHITE;
     }
 }
-*/
 
 void Agent::Preplay() {
     // 初始化weight和nextPos
@@ -209,11 +196,19 @@ void Agent::Preplay() {
 }
 
 void Agent::Update(int x, int y, int color) {
+    if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
+        return;
+    }
     // 检查是否均为或均不为未放置
-    assert(!(weight[BLACK][x * 15 + y] == -1) ^
-           (weight[WHITE][x * 15 + y] == -1));
+    assert(!(weight[BLACK][x * 15 + y] == -1) ^ (weight[WHITE][x * 15 + y] == -1));
     // 原始为未放置=>清除点在weight和nextPos中的记录
     if (weight[BLACK][x * 15 + y] != -1 && weight[WHITE][x * 15 + y] != -1) {
+#ifndef ONLINE_JUDGE
+        assert(nextPos[MAX].count(
+                   {x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])}) == 1);
+        assert(nextPos[WHITE].count(Position{x, y, weight[WHITE][x * 15 + y]}) == 1);
+        assert(nextPos[MAX].count(Position{x, y, weight[WHITE][x * 15 + y]}) == 1);
+#endif
         nextPos[MAX].erase(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
         nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});
         nextPos[BLACK].erase(Position{x, y, weight[BLACK][x * 15 + y]});
@@ -233,7 +228,13 @@ void Agent::Update(int x, int y, int color) {
     for (int i = max(0, x - 4); i < min(15, x + 5); i++) {
         for (int j = max(0, y - 4); j < min(15, y + 5); j++) {
             if ((i != x || j != y) && myBoard.boardState[i][j] == UNPLACE) {
-                // 删除现存权值记录
+// 删除现存权值记录
+#ifndef ONLINE_JUDGE
+                assert(nextPos[MAX].count(Position{
+                           i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])}) == 1);
+                assert(nextPos[BLACK].count(Position{i, j, weight[BLACK][i * 15 + j]}) == 1);
+                assert(nextPos[WHITE].count(Position{i, j, weight[WHITE][i * 15 + j]}) == 1);
+#endif
                 nextPos[MAX].erase(Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
                 nextPos[WHITE].erase(Position{i, j, weight[WHITE][i * 15 + j]});
                 nextPos[BLACK].erase(Position{i, j, weight[BLACK][i * 15 + j]});

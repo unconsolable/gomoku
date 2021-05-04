@@ -6,8 +6,8 @@ struct Position {
 };
 
 bool operator<(const Position& lhs, const Position& rhs) {
-    int lhsx = abs(SIZE / 2 - lhs.x), rhsx = abs(SIZE / 2 - rhs.x);
-    int lhsy = abs(SIZE / 2 - lhs.y), rhsy = abs(SIZE / 2 - rhs.y);
-    return (lhs.w == rhs.w)? ((lhsx == rhsx) ? (lhsy < rhsy) : (lhsx < rhsx)): (lhs.w > rhs.w);
+    int lhsw = 14 - abs(SIZE / 2 - lhs.x) - abs(SIZE / 2 - lhs.y) + lhs.w;
+    int rhsw = 14 - abs(SIZE / 2 - rhs.x) - abs(SIZE / 2 - rhs.y) + rhs.w;
+    return (lhsw == rhsw)? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x)): (lhsw > rhsw);
 }
 #endif

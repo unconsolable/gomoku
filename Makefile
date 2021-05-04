@@ -12,6 +12,6 @@ debug:
 release:
 	$(CC) $(CXXFLAGS) -o $(EXEC) -DRELEASE $(SRC)
 oj:
-	$(CC) $(CXXFLAGS) -o $(EXEC) -DONLINE_JUDGE $(SRC)
+	$(CC) $(CXXFLAGS) -g -o $(EXEC) -DONLINE_JUDGE $(SRC)
 ojsingle:
 	$(CC) $(CXXFLAGS) -g -o $(EXECSINGLE) $(SRCSINGLE)
