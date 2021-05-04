@@ -8,8 +8,9 @@
 // 为加快运行速度，用以下类型代替int(如果不超出范围)
 typedef int_fast8_t Byte;
 typedef uint_fast8_t UByte;
+typedef long long LL;
 
-const int INF = 1E9;
+const LL INF = 1E16;
 
 // bestDropId 表示未设置
 const int BEST_UNDEFINED = -1;
@@ -18,7 +19,7 @@ const int BEST_UNDEFINED = -1;
 const int BRANCH_LIMIT = 32;
 
 // 搜索深度默认为 6, 优化后再升级
-const int SEARCH_DEPTH = 6;
+const int SEARCH_DEPTH = 4;
 
 // 各局面价值表，待完善
 const int valueTable = {0};

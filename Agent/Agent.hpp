@@ -22,7 +22,7 @@ struct Agent {
     // 地方上一次落子位置
     int lastDropId = -1;
     // 最高得分
-    int bestScore = -INF;
+    LL bestScore = -INF;
     // 落子位置和对应的权重, 用于在set中查找.
     // -1表示有棋子的点
     int weight[2][225];
@@ -36,17 +36,17 @@ struct Agent {
     // 判断AI是否为先手
     // void DetermineBlack(const Json::Value &, int);
     // 局面估值
-    int Evaluate(int);
+    LL Evaluate(int);
     // 更改一个点的颜色, 同时更新附近的9*9格子内的空闲点权值信息
     // 后续优化可以尝试减少更改的范围
     void Update(int x, int y, int color);
     // 局面预处理, 初始化nextPos和weight数组
     void Preplay();
     // 搜素
-    int MinMaxSearch(int, int, int, bool);
+    LL MinMaxSearch(int, LL, LL, bool);
 };
 
-int Agent::MinMaxSearch(int depth, int alpha, int beta, bool curColor) {
+LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
     // 对手五连应该直接返回 -INF
     if (lastDropId != -1 &&
         myBoard.CheckFive(lastDropId / 15, lastDropId % 15, curColor ^ 1))
@@ -56,15 +56,18 @@ int Agent::MinMaxSearch(int depth, int alpha, int beta, bool curColor) {
     // 无子可走
     if(!nextPos[color].size()) return -INF;
     // 对所有可能局面进行搜索
-    int cntBranch = 0;
     set<Position> tmp;
     auto pos = nextPos[curColor].begin();
+    // 部分拷贝
     for(int i = 0; i < SEARCHCNT[depth]; i++) {
-        // if(cntBranch > BRANCH_LIMIT) break;
-        cntBranch++;
         tmp.insert(*pos);
         pos++;
     }
+    // 全拷贝
+    /*for(int i = 0; i < nextPos[curColor].size(); i++) {
+        tmp.insert(*pos);
+        pos++;
+    }*/
     for(auto& pos: tmp) {
         int x = pos.x, y = pos.y;
         Update(x, y, curColor);
@@ -72,7 +75,7 @@ int Agent::MinMaxSearch(int depth, int alpha, int beta, bool curColor) {
         int tmpId = lastDropId;
         lastDropId = x * 15 + y;
         // 继续搜索
-        int val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
+        LL val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
         // 取消落子 更新得分
         Update(x, y, UNPLACE);
         // 恢复上一次落子位置
@@ -218,8 +221,8 @@ void Agent::Update(int x, int y, int color) {
         nextPos[WHITE].insert(Position{x, y, weight[WHITE][x * 15 + y]});
     }
     // 修改完成后, 在9*9范围内修改空闲点的权值
-    for (int i = max(0, x - 4); i < min(15, x + 4); i++) {
-        for (int j = max(0, y - 4); j < min(15, y + 4); j++) {
+    for (int i = max(0, x - 4); i < min(15, x + 5); i++) {
+        for (int j = max(0, y - 4); j < min(15, y + 5); j++) {
             if ((i != x || j != y) && myBoard.boardState[i][j] == UNPLACE) {
                 // 删除现存权值记录
                 nextPos[BLACK].erase(Position{i, j, weight[BLACK][i * 15 + j]});
@@ -236,13 +239,13 @@ void Agent::Update(int x, int y, int color) {
     }
 }
 
-int Agent::Evaluate(int color) {
+LL Agent::Evaluate(int color) {
     // 下面两种方法效果都不好
-
-    //int tot = 0;
-    //for (auto& pos : nextPos[color]) tot += pos.w;
-    return nextPos[color].begin()->w;
-    // return tot;
+    LL tot = 0;
+    for (auto& pos : nextPos[color]) tot += pos.w;
+    for (auto& pos : nextPos[color^1]) tot -= pos.w * 8 / 10;
+    //return nextPos[color].begin()->w;
+    return tot;
 }
 
 #endif
