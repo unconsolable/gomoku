@@ -27,7 +27,7 @@ struct Agent {
     // -1表示有棋子的点
     int weight[2][225];
     // 按照权排序的落子位置集合
-    set<Position> nextPos[2];
+    set<Position> nextPos[3];
 
     // 运行
     void Run();
@@ -54,17 +54,17 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
     // 层数用完，估值返回
     if (depth <= 0) return Evaluate(curColor);
     // 无子可走
-    if(!nextPos[color].size()) return -INF;
+    if(!nextPos[MAX].size()) return -INF;
     // 对所有可能局面进行搜索
     set<Position> tmp;
-    auto pos = nextPos[curColor].begin();
+    auto pos = nextPos[MAX].begin();
     // 部分拷贝
     for(int i = 0; i < SEARCHCNT[depth]; i++) {
         tmp.insert(*pos);
         pos++;
     }
     // 全拷贝
-    /*for(int i = 0; i < nextPos[curColor].size(); i++) {
+    /*for(int i = 0; i < nextPos[MAX].size(); i++) {
         tmp.insert(*pos);
         pos++;
     }*/
@@ -117,9 +117,13 @@ void Agent::Run() {
         // auto [aix, aiy, ok] = myBoard.GreedyPlace(color);
         MinMaxSearch(SEARCH_DEPTH, -INF, INF, WHITE);
         myTimer->getTimePass(__LINE__);
-        cout << "Opponent: ";
+        cout << "Opponent: " << bestDropId / 15 << " " << bestDropId % 15 << endl;
+        // 落子
         Update(bestDropId / 15, bestDropId % 15, WHITE);
-        cout << "Score: " << bestScore << endl;
+        debug(nextPos[WHITE].size());
+        debug(nextPos[BLACK].size());
+        debug(nextPos[MAX].size());
+        debug(bestScore);
         // UNUSED(aix, aiy);
         myBoard.Show();
         // if (!ok) {
@@ -189,14 +193,16 @@ void Agent::Preplay() {
             // 如果位置上已有棋子, 标记权重为-1
             // 否则计算权重, 并分别存放在weight和nextPos中
             if (myBoard.boardState[i][j] != UNPLACE) {
-                weight[BLACK][i * 15 + j] = weight[WHITE][i * 15 + j] = -1;
+                weight[BLACK][i * 15 + j] = weight[WHITE][i * 15 + j] = -1;           
             } else {
                 weight[BLACK][i * 15 + j] = myBoard.MarkOfPoint(i, j, BLACK);
                 weight[WHITE][i * 15 + j] = myBoard.MarkOfPoint(i, j, WHITE);
-                nextPos[BLACK].insert(
-                    Position{i, j, weight[BLACK][i * 15 + j]});
+                nextPos[MAX].insert(
+                    Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
                 nextPos[WHITE].insert(
                     Position{i, j, weight[WHITE][i * 15 + j]});
+                nextPos[BLACK].insert(
+                    Position{i, j, weight[BLACK][i * 15 + j]});
             }
         }
     }
@@ -208,8 +214,9 @@ void Agent::Update(int x, int y, int color) {
            (weight[WHITE][x * 15 + y] == -1));
     // 原始为未放置=>清除点在weight和nextPos中的记录
     if (weight[BLACK][x * 15 + y] != -1 && weight[WHITE][x * 15 + y] != -1) {
-        nextPos[BLACK].erase(Position{x, y, weight[BLACK][x * 15 + y]});
+        nextPos[MAX].erase(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
         nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});
+        nextPos[BLACK].erase(Position{x, y, weight[BLACK][x * 15 + y]});
         weight[BLACK][x * 15 + y] = weight[WHITE][x * 15 + y] = -1;
     }
     myBoard.boardState[x][y] = color;
@@ -217,33 +224,35 @@ void Agent::Update(int x, int y, int color) {
     if (color == UNPLACE) {
         weight[BLACK][x * 15 + y] = myBoard.MarkOfPoint(x, y, BLACK);
         weight[WHITE][x * 15 + y] = myBoard.MarkOfPoint(x, y, WHITE);
-        nextPos[BLACK].insert(Position{x, y, weight[BLACK][x * 15 + y]});
+
+        nextPos[MAX].insert(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
         nextPos[WHITE].insert(Position{x, y, weight[WHITE][x * 15 + y]});
+        nextPos[BLACK].insert(Position{x, y, weight[BLACK][x * 15 + y]});
     }
     // 修改完成后, 在9*9范围内修改空闲点的权值
     for (int i = max(0, x - 4); i < min(15, x + 5); i++) {
         for (int j = max(0, y - 4); j < min(15, y + 5); j++) {
             if ((i != x || j != y) && myBoard.boardState[i][j] == UNPLACE) {
                 // 删除现存权值记录
-                nextPos[BLACK].erase(Position{i, j, weight[BLACK][i * 15 + j]});
+                nextPos[MAX].erase(Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
                 nextPos[WHITE].erase(Position{i, j, weight[WHITE][i * 15 + j]});
+                nextPos[BLACK].erase(Position{i, j, weight[BLACK][i * 15 + j]});
                 // 求出新权值记录并保存
                 weight[BLACK][i * 15 + j] = myBoard.MarkOfPoint(i, j, BLACK);
                 weight[WHITE][i * 15 + j] = myBoard.MarkOfPoint(i, j, WHITE);
-                nextPos[BLACK].insert(
-                    Position{i, j, weight[BLACK][i * 15 + j]});
-                nextPos[WHITE].insert(
-                    Position{i, j, weight[WHITE][i * 15 + j]});
+                // 新增记录
+                nextPos[MAX].insert(Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
+                nextPos[WHITE].insert(Position{i, j, weight[WHITE][i * 15 + j]});
+                nextPos[BLACK].insert(Position{i, j, weight[BLACK][i * 15 + j]});
             }
         }
     }
 }
 
 LL Agent::Evaluate(int color) {
-    // 下面两种方法效果都不好
     LL tot = 0;
     for (auto& pos : nextPos[color]) tot += pos.w;
-    for (auto& pos : nextPos[color^1]) tot -= pos.w * 8 / 10;
+    for (auto& pos : nextPos[color ^ 1]) tot -= pos.w * 8 / 10;
     //return nextPos[color].begin()->w;
     return tot;
 }
