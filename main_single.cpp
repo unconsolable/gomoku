@@ -214,16 +214,24 @@ bool Board::CheckFive(int color) {
 }
 
 bool Board::CheckFive(int i, int j, bool color) {
-    for (int k = 0; k < 8; k++) {
-        int ti = i, tj = j;
+    for (int k = 0; k < 4; k++) {
         // 遍历每个棋子
+        int cnt = 0;
         for (int s = 1; s <= 4; s++) {
-            ti += dr[k];
-            tj += dc[k];
+            int ti = i + s * dr[k];
+            int tj = j + s * dc[k];
             if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) break;
             if (boardState[ti][tj] != color) break;
-            if (s == 4) return true;
+            cnt++;
         }
+         for (int s = 1; s <= 4; s++) {
+            int ti = i - s * dr[k];
+            int tj = j - s * dc[k];
+            if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) break;
+            if (boardState[ti][tj] != color) break;
+            cnt++;
+        }
+        if(cnt >= 4) return true;
     }
     return false;
 }
