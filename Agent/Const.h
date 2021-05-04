@@ -27,9 +27,9 @@ const int SEARCH_DEPTH = 6;
 const int valueTable = {0};
 // 棋盘大小
 const int SIZE = 15;
-// 方向增量，只设置右，右下，下，左下
-const int dr[] = {0, 1, 1, 1};
-const int dc[] = {1, 1, 0, -1};
+// 方向增量
+const int dr[] = {0, 1, 1, 1, 0, -1, -1, -1};
+const int dc[] = {1, 1, 0, -1, -1, 1, 0, -1};
 
 // 每个位置落子类型：
 // -1 无子，0 白，1 黑，2 下标非法
@@ -41,16 +41,16 @@ const int INVALID = -2;
 
 // 棋子类型得分，参数可以调整
 // 拆分远近活三，远中近活二
-const int LIVEFOURMARK = 2000000;
-const int SLEEPFOURMARK = 1000000;
-const int NEARLIVETHREEMARK = 102000;
-const int FARLIVETHREEMARK = 100000;
-const int SLEEPTHREEMARK = 50000;
-const int NEARLIVETWOMARK = 1200;
-const int MIDLIVETWOMARK = 1050;
-const int FARLIVETWOMARK = 1000;
-const int SLEEPTWOMARK = 500;
-const int ONEMARK = 1;
+const LL LIVEFOURMARK = 2000000;
+const LL SLEEPFOURMARK = 1000000;
+const LL NEARLIVETHREEMARK = 102000;
+const LL FARLIVETHREEMARK = 100000;
+const LL SLEEPTHREEMARK = 50000;
+const LL NEARLIVETWOMARK = 1200;
+const LL MIDLIVETWOMARK = 1050;
+const LL FARLIVETWOMARK = 1000;
+const LL SLEEPTWOMARK = 500;
+const LL ONEMARK = 1;
 
 int SEARCHCNT[] = {0, 2, 3, 3, 4, 7, 10};
 #endif

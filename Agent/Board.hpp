@@ -35,7 +35,7 @@ struct Board {
     // 和当前点相对位置的格子值
     int RelativePosVal(int, int, int, int);
     // 判断当前点的得分情况, 详见函数处注释
-    int MarkOfPoint(int, int, int);
+    LL MarkOfPoint(int, int, int);
 };
 
 Board::Board() {
@@ -150,13 +150,13 @@ bool Board::CheckFive(int color) {
 }
 
 bool Board::CheckFive(int i, int j, bool color) {
-    for (int k = 0; k < 4; k++) {
+    for (int k = 0; k < 8; k++) {
         int ti = i, tj = j;
         // 遍历每个棋子
         for (int s = 1; s <= 4; s++) {
             ti += dr[k];
             tj += dc[k];
-            if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) continue;
+            if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) break;
             if (boardState[ti][tj] != color) break;
             if (s == 4) return true;
         }
@@ -175,7 +175,7 @@ int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
     return boardState[curX][curY];
 }
 
-int Board::MarkOfPoint(int curX, int curY, int playerColor) {
+LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
     /*
      * 8个方向枚举
      * 以下注释以#表示(curX, curY), 1表示playerColor, 2表示otherColor
@@ -183,7 +183,7 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
      * 活的情况必须**中间同色棋子连续**, 中间有间断一定为眠
      * playerColor与aiColor相同分数为正, 类型相反分数为负
      */
-    int total = 0;
+    LL total = 0;
     for (int i = 0; i < 8; i++) {
         // 活四LIVEFOUR, #11110
         if (RelativePosVal(curX, curY, i, 1) == playerColor &&

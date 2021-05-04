@@ -25,7 +25,7 @@ struct Agent {
     LL bestScore = -INF;
     // 落子位置和对应的权重, 用于在set中查找.
     // -1表示有棋子的点
-    int weight[2][225];
+    LL weight[2][225];
     // 按照权排序的落子位置集合
     set<Position> nextPos[3];
 
