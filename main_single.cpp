@@ -36,9 +36,9 @@ const int SEARCH_DEPTH = 6;
 const int valueTable = {0};
 // 棋盘大小
 const int SIZE = 15;
-// 方向增量，只设置右，右下，下，左下
-const int dr[] = {0, 1, 1, 1};
-const int dc[] = {1, 1, 0, -1};
+// 方向增量
+const int dr[] = {0, 1, 1, 1, 0, -1, -1, -1};
+const int dc[] = {1, 1, 0, -1, -1, 1, 0, -1};
 
 // 每个位置落子类型：
 // -1 无子，0 白，1 黑，2 下标非法
@@ -50,16 +50,16 @@ const int INVALID = -2;
 
 // 棋子类型得分，参数可以调整
 // 拆分远近活三，远中近活二
-const int LIVEFOURMARK = 2000000;
-const int SLEEPFOURMARK = 1000000;
-const int NEARLIVETHREEMARK = 102000;
-const int FARLIVETHREEMARK = 100000;
-const int SLEEPTHREEMARK = 50000;
-const int NEARLIVETWOMARK = 1200;
-const int MIDLIVETWOMARK = 1050;
-const int FARLIVETWOMARK = 1000;
-const int SLEEPTWOMARK = 500;
-const int ONEMARK = 1;
+const LL LIVEFOURMARK = 2000000;
+const LL SLEEPFOURMARK = 1000000;
+const LL NEARLIVETHREEMARK = 102000;
+const LL FARLIVETHREEMARK = 100000;
+const LL SLEEPTHREEMARK = 50000;
+const LL NEARLIVETWOMARK = 1200;
+const LL MIDLIVETWOMARK = 1050;
+const LL FARLIVETWOMARK = 1000;
+const LL SLEEPTWOMARK = 500;
+const LL ONEMARK = 1;
 
 int SEARCHCNT[] = {0, 2, 3, 3, 4, 7, 10};
 #endif
@@ -99,7 +99,7 @@ struct Board {
     // 和当前点相对位置的格子值
     int RelativePosVal(int, int, int, int);
     // 判断当前点的得分情况, 详见函数处注释
-    int MarkOfPoint(int, int, int);
+    LL MarkOfPoint(int, int, int);
 };
 
 Board::Board() {
@@ -214,13 +214,13 @@ bool Board::CheckFive(int color) {
 }
 
 bool Board::CheckFive(int i, int j, bool color) {
-    for (int k = 0; k < 4; k++) {
+    for (int k = 0; k < 8; k++) {
         int ti = i, tj = j;
         // 遍历每个棋子
         for (int s = 1; s <= 4; s++) {
             ti += dr[k];
             tj += dc[k];
-            if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) continue;
+            if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) break;
             if (boardState[ti][tj] != color) break;
             if (s == 4) return true;
         }
@@ -239,7 +239,7 @@ int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
     return boardState[curX][curY];
 }
 
-int Board::MarkOfPoint(int curX, int curY, int playerColor) {
+LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
     /*
      * 8个方向枚举
      * 以下注释以#表示(curX, curY), 1表示playerColor, 2表示otherColor
@@ -247,7 +247,7 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
      * 活的情况必须**中间同色棋子连续**, 中间有间断一定为眠
      * playerColor与aiColor相同分数为正, 类型相反分数为负
      */
-    int total = 0;
+    LL total = 0;
     for (int i = 0; i < 8; i++) {
         // 活四LIVEFOUR, #11110
         if (RelativePosVal(curX, curY, i, 1) == playerColor &&
@@ -368,12 +368,13 @@ int Board::MarkOfPoint(int curX, int curY, int playerColor) {
 #ifndef POSITION_H
 
 struct Position {
-    int x, y, w;
+    int x, y;
+    LL w;
 };
 
 bool operator<(const Position& lhs, const Position& rhs) {
-    int lhsw = 14 - abs(SIZE / 2 - lhs.x) - abs(SIZE / 2 - lhs.y) + lhs.w;
-    int rhsw = 14 - abs(SIZE / 2 - rhs.x) - abs(SIZE / 2 - rhs.y) + rhs.w;
+    LL lhsw = 14 - abs(SIZE / 2 - lhs.x) - abs(SIZE / 2 - lhs.y) + lhs.w;
+    LL rhsw = 14 - abs(SIZE / 2 - rhs.x) - abs(SIZE / 2 - rhs.y) + rhs.w;
     return (lhsw == rhsw)? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x)): (lhsw > rhsw);
 }
 #endif
@@ -402,7 +403,7 @@ struct Agent {
     LL bestScore = -INF;
     // 落子位置和对应的权重, 用于在set中查找.
     // -1表示有棋子的点
-    int weight[2][225];
+    LL weight[2][225];
     // 按照权排序的落子位置集合
     set<Position> nextPos[3];
 
