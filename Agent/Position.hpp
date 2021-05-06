@@ -1,4 +1,5 @@
 #ifndef POSITION_H
+#define POSITION_H
 #include "Const.h"
 
 struct Position {
