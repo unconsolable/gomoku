@@ -28,6 +28,8 @@ struct Agent {
     LL weight[2][225];
     // 按照权排序的落子位置集合
     set<Position> nextPos[3];
+    // 白子和黑子的权值之和
+    LL sumWeight[2];
 
     // 运行
     void Run();
@@ -56,20 +58,21 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
     // 无子可走
     if(!nextPos[MAX].size()) return -INF;
     // 对所有可能局面进行搜索
-    set<Position> tmp;
+    // set<Position> tmp;
     auto pos = nextPos[MAX].begin();
     // 部分拷贝
-    for(int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end(); i++) {
-        tmp.insert(*pos);
-        pos++;
-    }
+    // for(int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end(); i++) {
+    //     tmp.insert(*pos);
+    //     pos++;
+    // }
     // 全拷贝
     /*for(int i = 0; i < nextPos[MAX].size(); i++) {
         tmp.insert(*pos);
         pos++;
     }*/
-    for(auto& pos: tmp) {
-        int x = pos.x, y = pos.y;
+    for(int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end(); i++, pos++) {
+        auto x = pos->x, y = pos->y;
+        auto w = pos->w;
         Update(x, y, curColor);
         // 更改上一次落子位置
         int tmpId = lastDropId;
@@ -78,6 +81,8 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
         LL val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
         // 取消落子 更新得分
         Update(x, y, UNPLACE);
+        pos = nextPos[MAX].find(Position{x, y, w});
+        assert(pos != nextPos[MAX].end());
         // 恢复上一次落子位置
         lastDropId = tmpId;
         if (val >= beta) {
@@ -88,7 +93,6 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
         if (depth == SEARCH_DEPTH &&
             (val > bestScore || bestDropId == BEST_UNDEFINED))
             bestScore = val, bestDropId = x * 15 + y;
-
     }
     return alpha;
 }
@@ -143,12 +147,12 @@ void Agent::Run() {
     // 分析自己收到的输入和自己过往的输出，并恢复状态
     int turnID = input["responses"].size();
     DetermineBlack(input);
-    Preplay();
     for (int i = 0; i < turnID; i++) {
-        Update(input["requests"][i]["x"].asInt(), input["requests"][i]["y"].asInt(), !color);
-        Update(input["responses"][i]["x"].asInt(), input["responses"][i]["y"].asInt(), color);
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(), input["requests"][i]["y"].asInt(), !color);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(), input["responses"][i]["y"].asInt(), color);
     }
-    Update(input["requests"][turnID]["x"].asInt(), input["requests"][turnID]["y"].asInt(), !color);
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(), input["requests"][turnID]["y"].asInt(), !color);
+    Preplay();
     MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
     Json::Value ret;
     ret["response"]["x"] = bestDropId / 15;
@@ -175,6 +179,7 @@ void Agent::DetermineBlack(const Json::Value &input) {
 
 void Agent::Preplay() {
     // 初始化weight和nextPos
+    sumWeight[0] = sumWeight[1] = 0;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             // 如果位置上已有棋子, 标记权重为-1
@@ -184,6 +189,8 @@ void Agent::Preplay() {
             } else {
                 weight[BLACK][i * 15 + j] = myBoard.MarkOfPoint(i, j, BLACK);
                 weight[WHITE][i * 15 + j] = myBoard.MarkOfPoint(i, j, WHITE);
+                sumWeight[BLACK] += weight[BLACK][i * 15 + j];
+                sumWeight[WHITE] += weight[WHITE][i * 15 + j];
                 nextPos[MAX].insert(
                     Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
                 nextPos[WHITE].insert(
@@ -212,6 +219,8 @@ void Agent::Update(int x, int y, int color) {
         nextPos[MAX].erase(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
         nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});
         nextPos[BLACK].erase(Position{x, y, weight[BLACK][x * 15 + y]});
+        sumWeight[WHITE] -= weight[WHITE][x * 15 + y];
+        sumWeight[BLACK] -= weight[BLACK][x * 15 + y];
         weight[BLACK][x * 15 + y] = weight[WHITE][x * 15 + y] = -1;
     }
     myBoard.boardState[x][y] = color;
@@ -219,14 +228,15 @@ void Agent::Update(int x, int y, int color) {
     if (color == UNPLACE) {
         weight[BLACK][x * 15 + y] = myBoard.MarkOfPoint(x, y, BLACK);
         weight[WHITE][x * 15 + y] = myBoard.MarkOfPoint(x, y, WHITE);
-
+        sumWeight[WHITE] += weight[WHITE][x * 15 + y];
+        sumWeight[BLACK] += weight[BLACK][x * 15 + y];
         nextPos[MAX].insert(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
         nextPos[WHITE].insert(Position{x, y, weight[WHITE][x * 15 + y]});
         nextPos[BLACK].insert(Position{x, y, weight[BLACK][x * 15 + y]});
     }
     // 修改完成后, 在9*9范围内修改空闲点的权值
-    for (int i = max(0, x - 4); i < min(15, x + 5); i++) {
-        for (int j = max(0, y - 4); j < min(15, y + 5); j++) {
+    for (int i = max(0, x - 5); i < min(15, x + 6); i++) {
+        for (int j = max(0, y - 5); j < min(15, y + 6); j++) {
             if ((i != x || j != y) && myBoard.boardState[i][j] == UNPLACE) {
 // 删除现存权值记录
 #ifndef ONLINE_JUDGE
@@ -238,9 +248,13 @@ void Agent::Update(int x, int y, int color) {
                 nextPos[MAX].erase(Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
                 nextPos[WHITE].erase(Position{i, j, weight[WHITE][i * 15 + j]});
                 nextPos[BLACK].erase(Position{i, j, weight[BLACK][i * 15 + j]});
+                sumWeight[WHITE] -= weight[WHITE][i * 15 + j];
+                sumWeight[BLACK] -= weight[BLACK][i * 15 + j];
                 // 求出新权值记录并保存
                 weight[BLACK][i * 15 + j] = myBoard.MarkOfPoint(i, j, BLACK);
                 weight[WHITE][i * 15 + j] = myBoard.MarkOfPoint(i, j, WHITE);
+                sumWeight[WHITE] += weight[WHITE][i * 15 + j];
+                sumWeight[BLACK] += weight[BLACK][i * 15 + j];
                 // 新增记录
                 nextPos[MAX].insert(Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
                 nextPos[WHITE].insert(Position{i, j, weight[WHITE][i * 15 + j]});
@@ -251,11 +265,12 @@ void Agent::Update(int x, int y, int color) {
 }
 
 LL Agent::Evaluate(int color) {
-    LL tot = 0;
-    for (auto& pos : nextPos[color]) tot += pos.w;
-    for (auto& pos : nextPos[color ^ 1]) tot -= pos.w * 8 / 10;
+    // LL tot = 0;
+    // for (auto& pos : nextPos[color]) tot += pos.w;
+    // for (auto& pos : nextPos[color ^ 1]) tot -= pos.w * 8 / 10;
+    return sumWeight[color] - (sumWeight[color ^ 1] * 8 / 10);
     //return nextPos[color].begin()->w;
-    return tot;
+    // return tot;
 }
 
 #endif
