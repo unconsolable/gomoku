@@ -181,124 +181,20 @@ int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
 }
 
 LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
-    /*
-     * 8个方向枚举
-     * 以下注释以#表示(curX, curY), 1表示playerColor, 2表示otherColor
-     * 0表示无子, 3表示非法下标, 未注明的表示任意
-     * 活的情况必须**中间同色棋子连续**, 中间有间断一定为眠
-     * playerColor与aiColor相同分数为正, 类型相反分数为负
-     */
     LL total = 0;
-    for (int i = 0; i < 8; i++) {
-        // 活四LIVEFOUR, #11110
-        if (RelativePosVal(curX, curY, i, 1) == playerColor &&
-            RelativePosVal(curX, curY, i, 2) == playerColor &&
-            RelativePosVal(curX, curY, i, 3) == playerColor &&
-            RelativePosVal(curX, curY, i, 4) == playerColor &&
-            RelativePosVal(curX, curY, i, 5) == UNPLACE) {
-            total += LIVEFOURMARK;
+    for (int i = 0; i < 4; i++) {
+        int left = 0, right = 0;
+        while (RelativePosVal(curX, curY, i, -left-1) == playerColor)
+            left++;
+        while (RelativePosVal(curX, curY, i, right+1) == playerColor)
+            right++;
+        int leftUnplace = RelativePosVal(curX, curY, i, -left-1) == UNPLACE, 
+        rightUnplace = RelativePosVal(curX, curY, i, right+1) == UNPLACE;
+        if (left + right >= 4) {
+            return MARKS[3][0] * 10;
         }
-        // 眠四SLEEPFOUR, #11112(3), 1#111, 11#11
-        else if (RelativePosVal(curX, curY, i, 1) == playerColor &&
-                 RelativePosVal(curX, curY, i, 2) == playerColor &&
-                 RelativePosVal(curX, curY, i, 3) == playerColor &&
-                 RelativePosVal(curX, curY, i, 4) == playerColor) {
-            total += SLEEPFOURMARK;
-        } else if (RelativePosVal(curX, curY, i, -1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 2) == playerColor &&
-                   RelativePosVal(curX, curY, i, 3) == playerColor) {
-            total += SLEEPFOURMARK;
-        } else if (RelativePosVal(curX, curY, i, -2) == playerColor &&
-                   RelativePosVal(curX, curY, i, -1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += SLEEPFOURMARK;
-        }
-        // 近活三NEARLIVETHREE, 0#111, #1110
-        else if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, 1) == playerColor &&
-                 RelativePosVal(curX, curY, i, 2) == playerColor &&
-                 RelativePosVal(curX, curY, i, 3) == playerColor) {
-            total += NEARLIVETHREEMARK;
-        } else if (RelativePosVal(curX, curY, i, 4) == UNPLACE &&
-                   RelativePosVal(curX, curY, i, 1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 2) == playerColor &&
-                   RelativePosVal(curX, curY, i, 3) == playerColor) {
-            total += NEARLIVETHREEMARK;
-        }
-        // 内活三 01#11, 1#110, 和近活三同等看待
-        else if (RelativePosVal(curX, curY, i, -2) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, -1) == playerColor &&
-                 RelativePosVal(curX, curY, i, 1) == playerColor &&
-                 RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += NEARLIVETHREEMARK;
-        } else if (RelativePosVal(curX, curY, i, 3) == UNPLACE &&
-                   RelativePosVal(curX, curY, i, -1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += NEARLIVETHREEMARK;
-        }
-        // 远活三FARLIVETHREE, #0111
-        else if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, 2) == playerColor &&
-                 RelativePosVal(curX, curY, i, 3) == playerColor &&
-                 RelativePosVal(curX, curY, i, 4) == playerColor) {
-            total += FARLIVETHREEMARK;
-        }
-        // 眠三SLEEPTHREE, 1#11
-        else if (RelativePosVal(curX, curY, i, -1) == playerColor &&
-                 RelativePosVal(curX, curY, i, 1) == playerColor &&
-                 RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += SLEEPTHREEMARK;
-        }
-        // 远活二 #0011
-        else if (RelativePosVal(curX, curY, i, 1) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, 2) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, 3) == playerColor &&
-                 RelativePosVal(curX, curY, i, 4) == playerColor) {
-            total += FARLIVETWOMARK;
-        }
-        // 中活二 0#011, #0110
-        else if (RelativePosVal(curX, curY, i, -1) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, 1) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, 2) == playerColor &&
-                 RelativePosVal(curX, curY, i, 3) == playerColor) {
-            total += MIDLIVETWOMARK;
-        } else if (RelativePosVal(curX, curY, i, 4) == UNPLACE &&
-                   RelativePosVal(curX, curY, i, 1) == UNPLACE &&
-                   RelativePosVal(curX, curY, i, 2) == playerColor &&
-                   RelativePosVal(curX, curY, i, 3) == playerColor) {
-            total += MIDLIVETWOMARK;
-        }
-        // 近活二 00#11, 0#110, #1100
-        else if (RelativePosVal(curX, curY, i, -2) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, -1) == UNPLACE &&
-                 RelativePosVal(curX, curY, i, 1) == playerColor &&
-                 RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += NEARLIVETWOMARK;
-        } else if (RelativePosVal(curX, curY, i, 3) == UNPLACE &&
-                   RelativePosVal(curX, curY, i, -1) == UNPLACE &&
-                   RelativePosVal(curX, curY, i, 1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += NEARLIVETWOMARK;
-        } else if (RelativePosVal(curX, curY, i, 3) == UNPLACE &&
-                   RelativePosVal(curX, curY, i, 4) == UNPLACE &&
-                   RelativePosVal(curX, curY, i, 1) == playerColor &&
-                   RelativePosVal(curX, curY, i, 2) == playerColor) {
-            total += NEARLIVETWOMARK;
-        }
-        // 眠二 1#1
-        else if (RelativePosVal(curX, curY, i, -1) == playerColor &&
-                 RelativePosVal(curX, curY, i, 1) == playerColor) {
-            total += SLEEPTWOMARK;
-        }
-        // 只认为0000#1为活一
-        else if ((RelativePosVal(curX, curY, i, -3) == UNPLACE) &&
-                 (RelativePosVal(curX, curY, i, -2) == UNPLACE) &&
-                 (RelativePosVal(curX, curY, i, -1) == UNPLACE) &&
-                 (RelativePosVal(curX, curY, i, 1) == playerColor)) {
-            total += ONEMARK;
+        if (leftUnplace || rightUnplace) {
+            total += MARKS[left + right][leftUnplace ^ rightUnplace];
         }
     }
     return total;
