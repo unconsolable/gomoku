@@ -170,10 +170,8 @@ bool Board::CheckFive(int i, int j, bool color) {
 }
 
 int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
-    int unitOffsetX[] = {0, 1, 1, 1, 0, -1, -1, -1};
-    int unitOffsetY[] = {1, 1, 0, -1, -1, -1, 0, 1};
-    curX = curX + unitOffsetX[direction] * offset;
-    curY = curY + unitOffsetY[direction] * offset;
+    curX = curX + dr[direction] * offset;
+    curY = curY + dc[direction] * offset;
     if (curX < 0 || curX >= SIZE || curY < 0 || curY >= SIZE) {
         return INVALID;
     }

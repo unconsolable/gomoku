@@ -29,7 +29,7 @@ const int BEST_UNDEFINED = -1;
 const int BRANCH_LIMIT = 32;
 
 // 搜索深度默认为 6, 优化后再升级
-const int SEARCH_DEPTH = 6;
+const int SEARCH_DEPTH = 8;
 
 // 各局面价值表，待完善
 const int valueTable = {0};
@@ -60,7 +60,7 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-int SEARCHCNT[] = {0, 4, 4, 4, 6, 6, 9};
+int SEARCHCNT[] = {0, 3, 4, 4, 4, 4, 6, 6, 9};
 const LL MARKS[][2]={{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
 
 #endif
@@ -235,10 +235,8 @@ bool Board::CheckFive(int i, int j, bool color) {
 }
 
 int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
-    int unitOffsetX[] = {0, 1, 1, 1, 0, -1, -1, -1};
-    int unitOffsetY[] = {1, 1, 0, -1, -1, -1, 0, 1};
-    curX = curX + unitOffsetX[direction] * offset;
-    curY = curY + unitOffsetY[direction] * offset;
+    curX = curX + dr[direction] * offset;
+    curY = curY + dc[direction] * offset;
     if (curX < 0 || curX >= SIZE || curY < 0 || curY >= SIZE) {
         return INVALID;
     }
@@ -514,10 +512,11 @@ void Agent::Update(int x, int y, int color) {
         nextPos[WHITE].insert(Position{x, y, weight[WHITE][x * 15 + y]});
         nextPos[BLACK].insert(Position{x, y, weight[BLACK][x * 15 + y]});
     }
-    // 修改完成后, 在9*9范围内修改空闲点的权值
-    for (int i = max(0, x - 5); i < min(15, x + 6); i++) {
-        for (int j = max(0, y - 5); j < min(15, y + 6); j++) {
-            if ((i != x || j != y) && myBoard.boardState[i][j] == UNPLACE) {
+    // 修改完成后, 在8*4范围内修改空闲点的权值
+    for (int dir = 0; dir < 8; dir++) {
+        for (int off = 1; off < 5; off++) {
+            if (myBoard.RelativePosVal(x, y, dir, off) == UNPLACE) {
+                int i = x + dr[dir] * off, j = y + dc[dir] * off;
 // 删除现存权值记录
 #ifndef ONLINE_JUDGE
                 assert(nextPos[MAX].count(Position{
