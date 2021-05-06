@@ -8,8 +8,6 @@
 using namespace std;
 
 struct Board {
-    // 每个位置得分，用于MinMaxSearch对选择位置进行排序，得分高的位置先选
-    int posValue[SIZE][SIZE];
     // 每个位置落子类型：-1 无子，0 白，1 黑
     int boardState[SIZE][SIZE];
 
@@ -41,7 +39,6 @@ struct Board {
 Board::Board() {
     for (int i = 0; i < SIZE; i++)
         for (int j = 0; j < SIZE; j++) {
-            posValue[i][j] = 0;
             boardState[i][j] = -1;
         }
 }

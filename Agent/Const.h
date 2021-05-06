@@ -52,5 +52,5 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-int SEARCHCNT[] = {0, 2, 3, 3, 4, 7, 10};
+int SEARCHCNT[] = {0, 4, 4, 4, 6, 6, 9};
 #endif
