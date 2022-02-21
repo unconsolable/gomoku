@@ -63,7 +63,7 @@ struct Agent {
 
 LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
     // 对手五连应该直接返回 -INF
-    if (lastDropPos == POS_UNDEFINED &&
+    if (lastDropPos != POS_UNDEFINED &&
         myBoard.CheckFive(lastDropPos.first, lastDropPos.second, curColor ^ 1))
         return -INF;
     // 层数用完，估值返回
@@ -86,8 +86,8 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
     }*/
     for (int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end();
          i++, pos++) {
-        auto x = pos->x, y = pos->y;
-        auto w = pos->w;
+        int x = pos->x, y = pos->y;
+        int w = pos->w;
         Update(x, y, curColor);
         // 更改上一次落子位置
         pair<int, int> tmpId = lastDropPos;
@@ -121,7 +121,7 @@ void Agent::Run() {
         cout << "Your drop position: ";
         cin >> x >> y;
         if (myBoard.RelativePosState(x, y, 0, 0) != UNPLACE) {
-            cout << "This position is already occupied!";
+            cout << "This position is already occupied!" << endl;
             continue;
         }
         Update(x, y, BLACK);
@@ -231,9 +231,10 @@ void Agent::Update(int x, int y, int color) {
     }
     // 修改完成后, 在8*4范围内修改空闲点的权值
     for (int dir = 0; dir < 8; dir++) {
+        int i = x, j = y;
         for (int off = 1; off < 5; off++) {
-            if (myBoard.RelativePosState(x, y, dir, off) == UNPLACE) {
-                int i = x + dr[dir] * off, j = y + dc[dir] * off;
+            i += dr[dir], j += dc[dir];
+            if (myBoard.RelativePosState(i, j, 0, 0) == UNPLACE) {
 // 删除现存权值记录
 #ifndef ONLINE_JUDGE
                 assert(
