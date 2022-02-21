@@ -24,7 +24,7 @@ const int BRANCH_LIMIT = 32;
 const int SEARCH_DEPTH = 6;
 
 // 各局面价值表，待完善
-const int valueTable = {0};
+const int valueTable = 0;
 // 棋盘大小
 const int SIZE = 15;
 // 方向增量
@@ -52,7 +52,7 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-const LL MARKS[][2]={{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
+const LL MARKS[][2] = {{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
 
 int SEARCHCNT[] = {0, 4, 4, 4, 6, 6, 9};
 #endif

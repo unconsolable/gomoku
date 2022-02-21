@@ -250,7 +250,7 @@ void Agent::Update(int x, int y, int color) {
     // 修改完成后, 在8*4范围内修改空闲点的权值
     for (int dir = 0; dir < 8; dir++) {
         for (int off = 1; off < 5; off++) {
-            if (myBoard.RelativePosVal(x, y, dir, off) == UNPLACE) {
+            if (myBoard.RelativePosState(x, y, dir, off) == UNPLACE) {
                 int i = x + dr[dir] * off, j = y + dc[dir] * off;
 // 删除现存权值记录
 #ifndef ONLINE_JUDGE

@@ -277,6 +277,7 @@ bool operator<(const Position& lhs, const Position& rhs) {
     LL rhsw = 14 - abs(SIZE / 2 - rhs.x) - abs(SIZE / 2 - rhs.y) + rhs.w;
     return (lhsw == rhsw)? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x)): (lhsw > rhsw);
 }
+
 #endif
 // #include <Agent.hpp>
 #ifndef AGENT_HPP
