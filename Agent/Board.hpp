@@ -131,7 +131,7 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
             rightUnplace =
                 RelativePosState(curX, curY, i, right + 1) == UNPLACE;
         if (left + right >= 4) {
-            return MARKS[3][0] * 10;
+            return MARKS[3][0];
         }
         if (leftUnplace || rightUnplace) {
             total += MARKS[left + right][leftUnplace ^ rightUnplace];

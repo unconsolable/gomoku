@@ -9,9 +9,6 @@ using std::pair;
 
 //#define ONLINE_JUDGE
 
-// 为加快运行速度，用以下类型代替int(如果不超出范围)
-typedef int_fast8_t Byte;
-typedef uint_fast8_t UByte;
 typedef long long LL;
 
 const LL INF = 1E16;
@@ -54,7 +51,8 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-const LL MARKS[][2]={{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
+const LL MARKS[][2] = {
+    {20, 10}, {1000, 200}, {20000, 5000}, {1000000000, 200000}};
 
 int SEARCHCNT[] = {0, 5, 5, 5, 6, 6, 9};
 #endif

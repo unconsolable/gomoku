@@ -40,12 +40,7 @@ struct Agent {
         sumWeight[0] = sumWeight[1] = 0;
         for (int i = 0; i < SIZE; i++)
             for (int j = 0; j < SIZE; j++) {
-                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
-                weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
-                nextPos[MAX].insert(Position{
-                    i, j, max(weight[BLACK][i][j], weight[WHITE][i][j])});
-                nextPos[WHITE].insert(Position{i, j, weight[BLACK][i][j]});
-                nextPos[BLACK].insert(Position{i, j, weight[WHITE][i][j]});
+                weight[BLACK][i][j] = weight[WHITE][i][j] = 0;
             }
     }
     ~Agent() { delete myTimer; }
@@ -59,11 +54,12 @@ struct Agent {
     void Update(int x, int y, int color);
     // 局面预处理
     void Init();
+    void Preplay();
     // 搜素
-    LL MinMaxSearch(int, LL, LL, bool);
+    LL MinMaxSearch(int, LL, LL, int);
 };
 
-LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
+LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
     // 对手五连应该直接返回 -INF
     if (lastDropPos != POS_UNDEFINED &&
         myBoard.CheckFive(lastDropPos.first, lastDropPos.second, curColor ^ 1))
@@ -178,14 +174,41 @@ void Agent::Init() {
     int turnID = input["responses"].size();
     DetermineColor(input);
     for (int i = 0; i < turnID; i++) {
-        Update(input["requests"][i]["x"].asInt(),
-               input["requests"][i]["y"].asInt(), !color);
-        Update(input["responses"][i]["x"].asInt(),
-               input["responses"][i]["y"].asInt(), color);
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
+                        input["requests"][i]["y"].asInt(), !color);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
+                        input["responses"][i]["y"].asInt(), color);
     }
-    Update(input["requests"][turnID]["x"].asInt(),
-           input["requests"][turnID]["y"].asInt(), !color);
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
+                    input["requests"][turnID]["y"].asInt(), !color);
 #endif
+    Preplay();
+}
+
+void Agent::Preplay() {
+    // 初始化weight和nextPos
+    sumWeight[0] = sumWeight[1] = 0;
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            // 如果位置上已有棋子, 标记权重为-1
+            // 否则计算权重, 并分别存放在weight和nextPos中
+            if (myBoard.boardState[i][j] != UNPLACE) {
+                weight[BLACK][i][j] = weight[WHITE][i][j] = -1;
+            } else {
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
+                sumWeight[BLACK] += weight[BLACK][i][j];
+                sumWeight[WHITE] += weight[WHITE][i][j];
+                nextPos[MAX].insert(Position{
+                    i, j,
+                    max(weight[WHITE][i][j], weight[BLACK][i][j])});
+                nextPos[WHITE].insert(
+                    Position{i, j, weight[WHITE][i][j]});
+                nextPos[BLACK].insert(
+                    Position{i, j, weight[BLACK][i][j]});
+            }
+        }
+    }
 }
 
 void Agent::Update(int x, int y, int color) {

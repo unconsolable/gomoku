@@ -16,9 +16,6 @@ using namespace std;
 
 //#define ONLINE_JUDGE
 
-// 为加快运行速度，用以下类型代替int(如果不超出范围)
-typedef int_fast8_t Byte;
-typedef uint_fast8_t UByte;
 typedef long long LL;
 
 const LL INF = 1E16;
@@ -62,7 +59,8 @@ const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
 int SEARCHCNT[] = {0, 4, 4, 5, 5, 5, 6, 6, 9};
-const LL MARKS[][2] = {{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
+const LL MARKS[][2] = {
+    {20, 10}, {1000, 200}, {20000, 5000}, {1000000000, 200000}};
 
 #endif
 #ifndef BOARD_H
@@ -194,7 +192,7 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
             rightUnplace =
                 RelativePosState(curX, curY, i, right + 1) == UNPLACE;
         if (left + right >= 4) {
-            return MARKS[3][0] * 10;
+            return MARKS[3][0];
         }
         if (leftUnplace || rightUnplace) {
             total += MARKS[left + right][leftUnplace ^ rightUnplace];
@@ -207,7 +205,7 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
 // #include <Position.hpp>
 #ifndef POSITION_H
 
-struct Position {
+    struct Position {
     int x, y;
     LL w;
 };
@@ -302,12 +300,7 @@ struct Agent {
         sumWeight[0] = sumWeight[1] = 0;
         for (int i = 0; i < SIZE; i++)
             for (int j = 0; j < SIZE; j++) {
-                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
-                weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
-                nextPos[MAX].insert(Position{
-                    i, j, max(weight[BLACK][i][j], weight[WHITE][i][j])});
-                nextPos[WHITE].insert(Position{i, j, weight[BLACK][i][j]});
-                nextPos[BLACK].insert(Position{i, j, weight[WHITE][i][j]});
+                weight[BLACK][i][j] = weight[WHITE][i][j] = 0;
             }
     }
     ~Agent() { delete myTimer; }
@@ -321,11 +314,12 @@ struct Agent {
     void Update(int x, int y, int color);
     // 局面预处理
     void Init();
+    void Preplay();
     // 搜素
-    LL MinMaxSearch(int, LL, LL, bool);
+    LL MinMaxSearch(int, LL, LL, int);
 };
 
-LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
+LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
     // 对手五连应该直接返回 -INF
     if (lastDropPos != POS_UNDEFINED &&
         myBoard.CheckFive(lastDropPos.first, lastDropPos.second, curColor ^ 1))
@@ -440,14 +434,38 @@ void Agent::Init() {
     int turnID = input["responses"].size();
     DetermineColor(input);
     for (int i = 0; i < turnID; i++) {
-        Update(input["requests"][i]["x"].asInt(),
-               input["requests"][i]["y"].asInt(), !color);
-        Update(input["responses"][i]["x"].asInt(),
-               input["responses"][i]["y"].asInt(), color);
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
+                        input["requests"][i]["y"].asInt(), !color);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
+                        input["responses"][i]["y"].asInt(), color);
     }
-    Update(input["requests"][turnID]["x"].asInt(),
-           input["requests"][turnID]["y"].asInt(), !color);
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
+                    input["requests"][turnID]["y"].asInt(), !color);
 #endif
+    Preplay();
+}
+
+void Agent::Preplay() {
+    // 初始化weight和nextPos
+    sumWeight[0] = sumWeight[1] = 0;
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            // 如果位置上已有棋子, 标记权重为-1
+            // 否则计算权重, 并分别存放在weight和nextPos中
+            if (myBoard.boardState[i][j] != UNPLACE) {
+                weight[BLACK][i][j] = weight[WHITE][i][j] = -1;
+            } else {
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
+                sumWeight[BLACK] += weight[BLACK][i][j];
+                sumWeight[WHITE] += weight[WHITE][i][j];
+                nextPos[MAX].insert(Position{
+                    i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
+                nextPos[WHITE].insert(Position{i, j, weight[WHITE][i][j]});
+                nextPos[BLACK].insert(Position{i, j, weight[BLACK][i][j]});
+            }
+        }
+    }
 }
 
 void Agent::Update(int x, int y, int color) {
