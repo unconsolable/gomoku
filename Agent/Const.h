@@ -1,7 +1,7 @@
 #ifndef CONST
 #define CONST
 #include <bits/stdc++.h>
-// 放置一些公用常量，不要格式化
+// 放置一些公用常量
 
 #define debug(x) cerr << #x << " = " << x << endl
 
@@ -14,7 +14,7 @@ typedef long long LL;
 
 const LL INF = 1E16;
 
-// bestDropId 表示未设置
+// bestDropId = -1 表示未设置
 const int BEST_UNDEFINED = -1;
 
 // 最大分支数
