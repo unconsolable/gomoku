@@ -46,7 +46,7 @@ struct Agent {
     void DetermineBlack(const Json::Value &);
     // 局面估值
     LL Evaluate(int);
-    // 更改一个点的颜色, 同时更新附近的9*9格子内的空闲点权值信息
+    // 更改一个点的颜色, 同时更新附近的9*4格子内的空闲点权值信息
     // 后续优化可以尝试减少更改的范围
     void Update(int x, int y, int color);
     // 局面预处理, 初始化nextPos和weight数组
