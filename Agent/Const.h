@@ -1,6 +1,8 @@
 #ifndef CONST
 #define CONST
-#include <bits/stdc++.h>
+#include <utility>
+using std::pair;
+
 // 放置一些公用常量
 
 #define debug(x) cerr << #x << " = " << x << endl
@@ -14,8 +16,8 @@ typedef long long LL;
 
 const LL INF = 1E16;
 
-// bestDropId = -1 表示未设置
-const int BEST_UNDEFINED = -1;
+// 表示未设置
+const pair<int, int> POS_UNDEFINED = {-1, -1};
 
 // 最大分支数
 const int BRANCH_LIMIT = 32;

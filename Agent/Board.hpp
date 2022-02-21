@@ -32,7 +32,7 @@ struct Board {
 Board::Board() {
     for (int i = 0; i < SIZE; i++)
         for (int j = 0; j < SIZE; j++) {
-            boardState[i][j] = -1;
+            boardState[i][j] = UNPLACE;
         }
 }
 
