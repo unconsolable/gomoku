@@ -7,7 +7,6 @@
 #include "Board.hpp"
 #include "Position.hpp"
 #include "Timer.hpp"
-#define UNUSED(x, y) (x) += (y)
 
 using namespace std;
 struct Agent {
