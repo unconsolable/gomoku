@@ -14,6 +14,7 @@ struct Agent {
     int color;
     //计时器
     Timer *myTimer;
+    clock_t st;
     // 棋盘
     Board myBoard;
     // 最优落子
@@ -39,10 +40,12 @@ struct Agent {
         sumWeight[0] = sumWeight[1] = 0;
         for (int i = 0; i < SIZE; i++)
             for (int j = 0; j < SIZE; j++) {
-                weight[BLACK][i][j] = weight[WHITE][i][j] = 0;
-                nextPos[MAX].insert(Position{i, j, 0});
-                nextPos[WHITE].insert(Position{i, j, 0});
-                nextPos[BLACK].insert(Position{i, j, 0});
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
+                nextPos[MAX].insert(Position{
+                    i, j, max(weight[BLACK][i][j], weight[WHITE][i][j])});
+                nextPos[WHITE].insert(Position{i, j, weight[BLACK][i][j]});
+                nextPos[BLACK].insert(Position{i, j, weight[WHITE][i][j]});
             }
     }
     ~Agent() { delete myTimer; }
@@ -69,7 +72,9 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
     if (depth <= 0) return Evaluate(curColor);
     // 无子可走
     if (!nextPos[MAX].size()) return -INF;
-
+#ifdef ONLINE_JUDGE
+    if (1.0 * (clock() - st) / CLOCKS_PER_SEC >= 0.98) return -INF;
+#endif
     auto pos = nextPos[MAX].begin();
     for (int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end();
          i++, pos++) {
@@ -138,6 +143,7 @@ void Agent::Run() {
         }
     }
 #else
+    st = clock();
     Init();
     MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
     Json::Value ret;
