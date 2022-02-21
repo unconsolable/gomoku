@@ -6,7 +6,7 @@
 #include "Board.hpp"
 #include "Position.hpp"
 #include "Timer.hpp"
-#include "jsoncpp/json.h"
+#include "../jsoncpp/json.h"
 #define UNUSED(x, y) (x) += (y)
 
 using namespace std;
