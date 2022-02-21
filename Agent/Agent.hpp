@@ -46,6 +46,7 @@ struct Agent {
                 nextPos[BLACK].insert(Position{i, j, 0});
             }
     }
+    ~Agent() { delete myTimer; }
     // 运行
     void Run();
     // 判断AI是否为先手
@@ -53,7 +54,6 @@ struct Agent {
     // 局面估值
     LL Evaluate(int);
     // 更改一个点的颜色, 同时更新附近的 9 * 4 格子内的空闲点权值信息
-    // 后续优化可以尝试减少更改的范围
     void Update(int x, int y, int color);
     // 局面预处理
     void Init();
@@ -70,20 +70,8 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
     if (depth <= 0) return Evaluate(curColor);
     // 无子可走
     if (!nextPos[MAX].size()) return -INF;
-    // 对所有可能局面进行搜索
-    // set<Position> tmp;
+
     auto pos = nextPos[MAX].begin();
-    // 部分拷贝
-    // for(int i = 0; i < SEARCHCNT[depth] && pos !=
-    // nextPos[MAX].end(); i++) {
-    //     tmp.insert(*pos);
-    //     pos++;
-    // }
-    // 全拷贝
-    /*for(int i = 0; i < nextPos[MAX].size(); i++) {
-        tmp.insert(*pos);
-        pos++;
-    }*/
     for (int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end();
          i++, pos++) {
         int x = pos->x, y = pos->y;
@@ -268,12 +256,7 @@ void Agent::Update(int x, int y, int color) {
 }
 
 LL Agent::Evaluate(int color) {
-    // LL tot = 0;
-    // for (auto& pos : nextPos[color]) tot += pos.w;
-    // for (auto& pos : nextPos[color ^ 1]) tot -= pos.w * 8 / 10;
     return sumWeight[color] - (sumWeight[color ^ 1] * 8 / 10);
-    // return nextPos[color].begin()->w;
-    // return tot;
 }
 
 #endif
