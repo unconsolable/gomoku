@@ -24,7 +24,7 @@ const LL INF = 1E16;
 const pair<int, int> POS_UNDEFINED = {-1, -1};
 
 // 最大分支数
-const int BRANCH_LIMIT = 32;
+const int BRANCH_LIMIT = 20;
 
 // 搜索深度默认为 6, 优化后再升级
 const int SEARCH_DEPTH = 8;
@@ -58,9 +58,8 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-int SEARCHCNT[] = {0, 5, 5, 5, 6, 6, 6, 6, 9};
-const LL MARKS[][2] = {
-    {5, 1}, {1000, 200}, {20000, 5000}, {1000000000, 200000}};
+int SEARCHCNT[] = {0, 7, 7, 6, 6, 6, 6, 6, 6};
+const LL MARKS[][2] = {{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
 
 #endif
 #ifndef BOARD_H
@@ -205,7 +204,7 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
 // #include <Position.hpp>
 #ifndef POSITION_H
 
-    struct Position {
+struct Position {
     int x, y;
     LL w;
 };
@@ -269,6 +268,7 @@ struct Timer {
 #include "jsoncpp/json.h"
 
 using namespace std;
+
 struct Agent {
     // 默认后手，持白子
     int color;
@@ -343,15 +343,16 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
         LL val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
         // 取消落子 更新得分
         Update(x, y, UNPLACE);
-        //pos = nextPos[MAX].find(Position{x, y, w});
-        //assert(pos != nextPos[MAX].end());
+        // pos = nextPos[MAX].find(Position{x, y, w});
+        // assert(pos != nextPos[MAX].end());
         // 恢复上一次落子位置
         lastDropPos = tmpId;
         if (val >= beta) {
             if (depth == SEARCH_DEPTH) bestScore = val, bestDropPos = {x, y};
             return val;
         }
-        if (val > alpha) alpha = val;  // bestDropPos
+        if (val > alpha) alpha = val;
+        // bestDropPos
         if (depth == SEARCH_DEPTH &&
             (val > bestScore || bestDropPos == POS_UNDEFINED))
             bestScore = val, bestDropPos = {x, y};
@@ -387,8 +388,8 @@ void Agent::Run() {
              << endl;
         // 落子
         Update(bestDropPos.first, bestDropPos.second, WHITE);
-        //debug(nextPos[WHITE].size());
-        //debug(nextPos[BLACK].size());
+        // debug(nextPos[WHITE].size());
+        // debug(nextPos[BLACK].size());
         debug(nextPos[MAX].size());
         debug(bestScore);
         myBoard.Show();
@@ -459,11 +460,13 @@ void Agent::Preplay() {
                 sumWeight[BLACK] += weight[BLACK][i][j];
                 sumWeight[WHITE] += weight[WHITE][i][j];
                 nextPos[MAX].insert(Position{
-                    i, j,
-                    max(weight[WHITE][i][j], weight[BLACK][i][j])});
-                //nextPos[WHITE].insert(
+                    i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
+                if (nextPos[MAX].size() > BRANCH_LIMIT) {
+                    nextPos[MAX].erase(*nextPos[MAX].rend());
+                }
+                // nextPos[WHITE].insert(
                 //    Position{i, j, weight[WHITE][i][j]});
-                //nextPos[BLACK].insert(
+                // nextPos[BLACK].insert(
                 //    Position{i, j, weight[BLACK][i][j]});
             }
         }
@@ -481,13 +484,14 @@ void Agent::Update(int x, int y, int color) {
 #ifndef ONLINE_JUDGE
         assert(nextPos[MAX].count(Position{
                    x, y, max(weight[WHITE][x][y], weight[BLACK][x][y])}) == 1);
-        //assert(nextPos[WHITE].count(Position{x, y, weight[WHITE][x][y]}) == 1);
-        //assert(nextPos[BLACK].count(Position{x, y, weight[BLACK][x][y]}) == 1);
+        // assert(nextPos[WHITE].count(Position{x, y, weight[WHITE][x][y]}) ==
+        // 1); assert(nextPos[BLACK].count(Position{x, y, weight[BLACK][x][y]})
+        // == 1);
 #endif
         nextPos[MAX].erase(
             Position{x, y, max(weight[WHITE][x][y], weight[BLACK][x][y])});
-        //nextPos[WHITE].erase(Position{x, y, weight[WHITE][x][y]});
-        //nextPos[BLACK].erase(Position{x, y, weight[BLACK][x][y]});
+        // nextPos[WHITE].erase(Position{x, y, weight[WHITE][x][y]});
+        // nextPos[BLACK].erase(Position{x, y, weight[BLACK][x][y]});
         sumWeight[WHITE] -= weight[WHITE][x][y];
         sumWeight[BLACK] -= weight[BLACK][x][y];
         weight[BLACK][x][y] = weight[WHITE][x][y] = -1;
@@ -501,8 +505,11 @@ void Agent::Update(int x, int y, int color) {
         sumWeight[BLACK] += weight[BLACK][x][y];
         nextPos[MAX].insert(
             Position{x, y, max(weight[WHITE][x][y], weight[BLACK][x][y])});
-        //nextPos[WHITE].insert(Position{x, y, weight[WHITE][x][y]});
-        //nextPos[BLACK].insert(Position{x, y, weight[BLACK][x][y]});
+        if (nextPos[MAX].size() > BRANCH_LIMIT) {
+            nextPos[MAX].erase(*nextPos[MAX].rend());
+        }
+        // nextPos[WHITE].insert(Position{x, y, weight[WHITE][x][y]});
+        // nextPos[BLACK].insert(Position{x, y, weight[BLACK][x][y]});
     }
     // 修改完成后, 在8*4范围内修改空闲点的权值
     for (int dir = 0; dir < 8; dir++) {
@@ -512,19 +519,20 @@ void Agent::Update(int x, int y, int color) {
             if (myBoard.RelativePosState(i, j, 0, 0) == UNPLACE) {
 // 删除现存权值记录
 #ifndef ONLINE_JUDGE
-                assert(
-                    nextPos[MAX].count(Position{
-                        i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])}) ==
-                    1);
-               // assert(nextPos[BLACK].count(
-               //            Position{i, j, weight[BLACK][i][j]}) == 1);
-               // assert(nextPos[WHITE].count(
-               //            Position{i, j, weight[WHITE][i][j]}) == 1);
+                // assert(
+                //    nextPos[MAX].count(Position{
+                //        i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])})
+                //        ==
+                //   1);
+                // assert(nextPos[BLACK].count(
+                //            Position{i, j, weight[BLACK][i][j]}) == 1);
+                // assert(nextPos[WHITE].count(
+                //            Position{i, j, weight[WHITE][i][j]}) == 1);
 #endif
                 nextPos[MAX].erase(Position{
                     i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
-                //nextPos[WHITE].erase(Position{i, j, weight[WHITE][i][j]});
-                //nextPos[BLACK].erase(Position{i, j, weight[BLACK][i][j]});
+                // nextPos[WHITE].erase(Position{i, j, weight[WHITE][i][j]});
+                // nextPos[BLACK].erase(Position{i, j, weight[BLACK][i][j]});
                 sumWeight[WHITE] -= weight[WHITE][i][j];
                 sumWeight[BLACK] -= weight[BLACK][i][j];
                 // 求出新权值记录并保存
@@ -535,8 +543,11 @@ void Agent::Update(int x, int y, int color) {
                 // 新增记录
                 nextPos[MAX].insert(Position{
                     i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
-                //nextPos[WHITE].insert(Position{i, j, weight[WHITE][i][j]});
-                //nextPos[BLACK].insert(Position{i, j, weight[BLACK][i][j]});
+                if (nextPos[MAX].size() > BRANCH_LIMIT) {
+                    nextPos[MAX].erase(*nextPos[MAX].rend());
+                }
+                // nextPos[WHITE].insert(Position{i, j, weight[WHITE][i][j]});
+                // nextPos[BLACK].insert(Position{i, j, weight[BLACK][i][j]});
             }
         }
     }
