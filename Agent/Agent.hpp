@@ -201,9 +201,6 @@ void Agent::Preplay() {
                 sumWeight[WHITE] += weight[WHITE][i][j];
                 nextPos[MAX].insert(Position{
                     i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
-                if (nextPos[MAX].size() > BRANCH_LIMIT) {
-                    nextPos[MAX].erase(*nextPos[MAX].rend());
-                }
                 // nextPos[WHITE].insert(
                 //    Position{i, j, weight[WHITE][i][j]});
                 // nextPos[BLACK].insert(
@@ -245,9 +242,6 @@ void Agent::Update(int x, int y, int color) {
         sumWeight[BLACK] += weight[BLACK][x][y];
         nextPos[MAX].insert(
             Position{x, y, max(weight[WHITE][x][y], weight[BLACK][x][y])});
-        if (nextPos[MAX].size() > BRANCH_LIMIT) {
-            nextPos[MAX].erase(*nextPos[MAX].rend());
-        }
         // nextPos[WHITE].insert(Position{x, y, weight[WHITE][x][y]});
         // nextPos[BLACK].insert(Position{x, y, weight[BLACK][x][y]});
     }
@@ -283,9 +277,6 @@ void Agent::Update(int x, int y, int color) {
                 // 新增记录
                 nextPos[MAX].insert(Position{
                     i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
-                if (nextPos[MAX].size() > BRANCH_LIMIT) {
-                    nextPos[MAX].erase(*nextPos[MAX].rend());
-                }
                 // nextPos[WHITE].insert(Position{i, j, weight[WHITE][i][j]});
                 // nextPos[BLACK].insert(Position{i, j, weight[BLACK][i][j]});
             }
@@ -294,7 +285,7 @@ void Agent::Update(int x, int y, int color) {
 }
 
 LL Agent::Evaluate(int color) {
-    return sumWeight[color] - (sumWeight[color ^ 1] * 8 / 10);
+    return sumWeight[color] * 2 - sumWeight[color ^ 1];
 }
 
 #endif

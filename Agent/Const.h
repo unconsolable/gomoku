@@ -51,7 +51,7 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-const LL MARKS[][2]={{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
-
-int SEARCHCNT[] = {0, 5, 5, 5, 6, 6, 9};
+int SEARCHCNT[] = {0, 7, 6, 6, 7, 7, 7, 7, 7};
+const LL MARKS[][2] = {
+    {3, 1}, {1000, 100}, {100000, 20000}, {10000000, 200000}};
 #endif
