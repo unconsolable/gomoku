@@ -98,6 +98,7 @@ bool Board::CheckFive(int i, int j, bool color) {
             if (boardState[ti][tj] != color) break;
             cnt++;
         }
+        if (cnt >= 4) return true;
         for (int s = 1; s <= 4; s++) {
             int ti = i - s * dr[k];
             int tj = j - s * dc[k];
