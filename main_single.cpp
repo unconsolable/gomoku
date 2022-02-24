@@ -328,9 +328,9 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
     // 层数用完，估值返回
     if (depth <= 0) return Evaluate(curColor);
     // 无子可走
-    if (!nextPos[MAX].size()) return -INF;
+    if (!nextPos[MAX].size()) return alpha;
 #ifdef ONLINE_JUDGE
-    if (1.0 * (clock() - st) / CLOCKS_PER_SEC >= 0.98) return -INF;
+    if (1.0 * (clock() - st) / CLOCKS_PER_SEC >= 0.98) return alpha;
 #endif
     auto pos = nextPos[MAX].begin();
     for (int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end();
