@@ -338,7 +338,7 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
         // 取消落子 更新得分
         Update(x, y, UNPLACE);
         pos = nextPos[MAX].find(Position{x, y, w});
-        // assert(pos != nextPos[MAX].end());
+        assert(pos != nextPos[MAX].end());
         // 恢复上一次落子位置
         if (depth == SEARCH_DEPTH &&
             (val > bestScore || bestDropPos == POS_UNDEFINED))
@@ -389,7 +389,6 @@ void Agent::Run() {
     }
 #else
     Init();
-    // myBoard.Show();
     st = clock();
     MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
     PrintJson();
@@ -446,7 +445,7 @@ void Agent::Init() {
             if (myBoard.boardState[i][j] != UNPLACE) {
                 weight[BLACK][i][j] = weight[WHITE][i][j] = -1;
             } else {
-                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK) * 1.1;
                 weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
                 sumWeight[BLACK] += weight[BLACK][i][j];
                 sumWeight[WHITE] += weight[WHITE][i][j];
@@ -485,7 +484,7 @@ void Agent::Update(int x, int y, int color) {
     myBoard.boardState[x][y] = color;
     // 更改为未放置=>增加点在weight和nextPos中的记录
     if (color == UNPLACE) {
-        weight[BLACK][x][y] = myBoard.MarkOfPoint(x, y, BLACK);
+        weight[BLACK][x][y] = myBoard.MarkOfPoint(x, y, BLACK) * 1.1;
         weight[WHITE][x][y] = myBoard.MarkOfPoint(x, y, WHITE);
         sumWeight[WHITE] += weight[WHITE][x][y];
         sumWeight[BLACK] += weight[BLACK][x][y];
@@ -517,7 +516,7 @@ void Agent::Update(int x, int y, int color) {
                 sumWeight[WHITE] -= weight[WHITE][i][j];
                 sumWeight[BLACK] -= weight[BLACK][i][j];
                 // 求出新权值记录并保存
-                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK) * 1.1;
                 weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
                 sumWeight[WHITE] += weight[WHITE][i][j];
                 sumWeight[BLACK] += weight[BLACK][i][j];
