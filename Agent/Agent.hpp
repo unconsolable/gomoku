@@ -19,8 +19,6 @@ struct Agent {
     Board myBoard;
     // 最优落子
     pair<int, int> bestDropPos;
-    // 地方上一次落子位置
-    pair<int, int> lastDropPos;
     // 最高得分
     LL bestScore;
     // 落子位置和对应的权重, 用于在set中查找.
@@ -35,13 +33,6 @@ struct Agent {
     Agent() {
         color = WHITE;
         myTimer = nullptr;
-        bestDropPos = lastDropPos = {-1, -1};
-        bestScore = -INF;
-        sumWeight[0] = sumWeight[1] = 0;
-        for (int i = 0; i < SIZE; i++)
-            for (int j = 0; j < SIZE; j++) {
-                weight[BLACK][i][j] = weight[WHITE][i][j] = 0;
-            }
     }
     ~Agent() { delete myTimer; }
     // 运行
@@ -54,48 +45,45 @@ struct Agent {
     void Update(int x, int y, int color);
     // 局面预处理
     void Init();
-    void Preplay();
     // 搜素
     LL MinMaxSearch(int, LL, LL, int);
+    // Jason形式输出落子
+    void PrintJson();
 };
 
 LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
-    // 对手五连应该直接返回 -INF
-    if (lastDropPos != POS_UNDEFINED &&
-        myBoard.CheckFive(lastDropPos.first, lastDropPos.second, curColor ^ 1))
-        return -INF;
-    // 层数用完，估值返回
+    // 搜索完成估值返回
     if (depth <= 0) return Evaluate(curColor);
     // 无子可走
-    if (!nextPos[MAX].size()) return -INF;
+    if (!nextPos[MAX].size()) return alpha;
 #ifdef ONLINE_JUDGE
-    if (1.0 * (clock() - st) / CLOCKS_PER_SEC >= 0.98) return -INF;
+    // 临近超时
+    if (1.0 * (clock() - st) / CLOCKS_PER_SEC >= 0.98) return alpha;
 #endif
     auto pos = nextPos[MAX].begin();
     for (int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end();
          i++, pos++) {
-        int x = pos->x, y = pos->y;
+        auto x = pos->x, y = pos->y;
+        auto w = pos->w;
         Update(x, y, curColor);
         // 更改上一次落子位置
-        pair<int, int> tmpId = lastDropPos;
-        lastDropPos = {x, y};
         // 继续搜索
-        LL val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
+        LL val;
+        if (myBoard.CheckFive(x, y, curColor)) {
+            val = INF;
+        } else {
+            val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
+        }
         // 取消落子 更新得分
         Update(x, y, UNPLACE);
-        // pos = nextPos[MAX].find(Position{x, y, w});
+        pos = nextPos[MAX].find(Position{x, y, w});
         // assert(pos != nextPos[MAX].end());
         // 恢复上一次落子位置
-        lastDropPos = tmpId;
-        if (val >= beta) {
-            if (depth == SEARCH_DEPTH) bestScore = val, bestDropPos = {x, y};
-            return val;
-        }
-        if (val > alpha) alpha = val;
-        // bestDropPos
         if (depth == SEARCH_DEPTH &&
             (val > bestScore || bestDropPos == POS_UNDEFINED))
             bestScore = val, bestDropPos = {x, y};
+        if (val >= beta) return val;
+        if (val > alpha) alpha = val;
     }
     return alpha;
 }
@@ -139,15 +127,19 @@ void Agent::Run() {
         }
     }
 #else
-    st = clock();
     Init();
+    st = clock();
     MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
+    PrintJson();
+#endif
+}
+
+void Agent::PrintJson() {
     Json::Value ret;
     ret["response"]["x"] = bestDropPos.first;
     ret["response"]["y"] = bestDropPos.second;
     Json::FastWriter writer;
     cout << writer.write(ret) << endl;
-#endif
 }
 
 void Agent::DetermineColor(const Json::Value &input) {
@@ -160,10 +152,10 @@ void Agent::DetermineColor(const Json::Value &input) {
 }
 
 void Agent::Init() {
-#ifndef ONLINE_JUDGE
-    lastDropPos = bestDropPos = POS_UNDEFINED;
+    bestDropPos = POS_UNDEFINED;
     bestScore = -INF;
-#else
+
+#ifdef ONLINE_JUDGE
     // 读入JSON
     string str;
     getline(cin, str);
@@ -182,11 +174,8 @@ void Agent::Init() {
     myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
                     input["requests"][turnID]["y"].asInt(), !color);
 #endif
-    Preplay();
-}
 
-void Agent::Preplay() {
-    // 初始化weight和nextPos
+    // 初始化 weight 和 nextPoss
     sumWeight[0] = sumWeight[1] = 0;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
@@ -201,10 +190,8 @@ void Agent::Preplay() {
                 sumWeight[WHITE] += weight[WHITE][i][j];
                 nextPos[MAX].insert(Position{
                     i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
-                // nextPos[WHITE].insert(
-                //    Position{i, j, weight[WHITE][i][j]});
-                // nextPos[BLACK].insert(
-                //    Position{i, j, weight[BLACK][i][j]});
+                // nextPos[WHITE].insert(Position{i, j, weight[WHITE][i][j]});
+                // nextPos[BLACK].insert(Position{i, j, weight[BLACK][i][j]});
             }
         }
     }
@@ -247,17 +234,15 @@ void Agent::Update(int x, int y, int color) {
     }
     // 修改完成后, 在8*4范围内修改空闲点的权值
     for (int dir = 0; dir < 8; dir++) {
-        int i = x, j = y;
         for (int off = 1; off < 5; off++) {
-            i += dr[dir], j += dc[dir];
-            if (myBoard.RelativePosState(i, j, 0, 0) == UNPLACE) {
+            if (myBoard.RelativePosState(x, y, dir, off) == UNPLACE) {
+                int i = x + dr[dir] * off, j = y + dc[dir] * off;
 // 删除现存权值记录
 #ifndef ONLINE_JUDGE
-                // assert(
-                //    nextPos[MAX].count(Position{
-                //        i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])})
-                //        ==
-                //   1);
+                assert(
+                    nextPos[MAX].count(Position{
+                        i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])}) ==
+                    1);
                 // assert(nextPos[BLACK].count(
                 //            Position{i, j, weight[BLACK][i][j]}) == 1);
                 // assert(nextPos[WHITE].count(
