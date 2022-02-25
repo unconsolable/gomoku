@@ -22,8 +22,6 @@ https://www.botzone.org.cn/match/62186bc2bbc22c318dbf7793
 https://www.botzone.org.cn/match/6218a829bbc22c318dbf9a1e (对方 bot 排行榜第 8)
 
 后手：
-https://www.botzone.org.cn/match/6218aa51bbc22c318dbf9b79 (后手负，第一步落子不合理)
-
 https://www.botzone.org.cn/match/6218734bbbc22c318dbf7b8c (10 层后手获胜)
 
 
