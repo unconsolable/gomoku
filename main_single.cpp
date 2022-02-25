@@ -58,7 +58,7 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-int SEARCHCNT[] = {0, 6, 6, 6, 7, 7, 7, 7, 9};
+int SEARCHCNT[] = {0, 7, 7, 7, 7, 7, 7, 7, 9};
 const LL MARKS[][2] = {
     {3, 1}, {1000, 100}, {100000, 20000}, {10000000, 200000}};
 
@@ -214,7 +214,7 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
             total += MARKS[left + right][leftUnplace ^ rightUnplace];
         }
     }
-    return total;
+    return total + BASE_MARK[curX][curY];
 }
 
 #endif
@@ -227,11 +227,9 @@ struct Position {
 };
 
 bool operator<(const Position &lhs, const Position &rhs) {
-    LL lhsw = BASE_MARK[lhs.x][lhs.y] + lhs.w;
-    LL rhsw = BASE_MARK[rhs.x][rhs.y] + rhs.w;
-    return (lhsw == rhsw)
+    return (lhs.w == rhs.w)
                ? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x))
-               : (lhsw > rhsw);
+               : (lhs.w > rhs.w);
 }
 
 #ifndef TIMER_H
@@ -354,7 +352,7 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
         // 取消落子 更新得分
         Update(x, y, UNPLACE);
         pos = nextPos[MAX].find(Position{x, y, w});
-        assert(pos != nextPos[MAX].end());
+        // assert(pos != nextPos[MAX].end());
         // 恢复上一次落子位置
         if (depth == SEARCH_DEPTH &&
             (val > bestScore || bestDropPos == POS_UNDEFINED))

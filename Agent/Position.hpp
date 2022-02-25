@@ -7,10 +7,8 @@ struct Position {
 };
 
 bool operator<(const Position &lhs, const Position &rhs) {
-    LL lhsw = BASE_MARK[lhs.x][lhs.y] + lhs.w;
-    LL rhsw = BASE_MARK[rhs.x][rhs.y] + rhs.w;
-    return (lhsw == rhsw)
+    return (lhs.w == rhs.w)
                ? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x))
-               : (lhsw > rhsw);
+               : (lhs.w > rhs.w);
 }
 #endif
