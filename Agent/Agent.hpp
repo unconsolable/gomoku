@@ -77,7 +77,7 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
         // 取消落子 更新得分
         Update(x, y, UNPLACE);
         pos = nextPos[MAX].find(Position{x, y, w});
-        // assert(pos != nextPos[MAX].end());
+        assert(pos != nextPos[MAX].end());
         // 恢复上一次落子位置
         if (depth == SEARCH_DEPTH &&
             (val > bestScore || bestDropPos == POS_UNDEFINED))

@@ -60,8 +60,7 @@ const LL ONEMARK = 1;
 
 int SEARCHCNT[] = {0, 6, 6, 6, 7, 7, 7, 7, 9};
 const LL MARKS[][2] = {
-    {3, 1}, {1000, 100}, {100000, 20000}, {10000000, 200000}};
-
+    {3, 1}, {1000, 100}, {100000, 20000}, {10000000, 500000}};
 #endif
 #ifndef BOARD_H
 #define BOARD_H
@@ -193,7 +192,7 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
             rightUnplace =
                 RelativePosState(curX, curY, i, right + 1) == UNPLACE;
         if (left + right >= 4) {
-            return MARKS[3][0];
+            return MARKS[3][0] * 100;
         }
         if (leftUnplace || rightUnplace) {
             total += MARKS[left + right][leftUnplace ^ rightUnplace];
@@ -390,6 +389,7 @@ void Agent::Run() {
     }
 #else
     Init();
+    // myBoard.Show();
     st = clock();
     MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
     PrintJson();
