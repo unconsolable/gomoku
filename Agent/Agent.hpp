@@ -184,7 +184,7 @@ void Agent::Init() {
             if (myBoard.boardState[i][j] != UNPLACE) {
                 weight[BLACK][i][j] = weight[WHITE][i][j] = -1;
             } else {
-                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK) * 1.1;
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
                 weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
                 sumWeight[BLACK] += weight[BLACK][i][j];
                 sumWeight[WHITE] += weight[WHITE][i][j];
@@ -223,7 +223,7 @@ void Agent::Update(int x, int y, int color) {
     myBoard.boardState[x][y] = color;
     // 更改为未放置=>增加点在weight和nextPos中的记录
     if (color == UNPLACE) {
-        weight[BLACK][x][y] = myBoard.MarkOfPoint(x, y, BLACK) * 1.1;
+        weight[BLACK][x][y] = myBoard.MarkOfPoint(x, y, BLACK);
         weight[WHITE][x][y] = myBoard.MarkOfPoint(x, y, WHITE);
         sumWeight[WHITE] += weight[WHITE][x][y];
         sumWeight[BLACK] += weight[BLACK][x][y];
@@ -255,7 +255,7 @@ void Agent::Update(int x, int y, int color) {
                 sumWeight[WHITE] -= weight[WHITE][i][j];
                 sumWeight[BLACK] -= weight[BLACK][i][j];
                 // 求出新权值记录并保存
-                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK) * 1.1;
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
                 weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
                 sumWeight[WHITE] += weight[WHITE][i][j];
                 sumWeight[BLACK] += weight[BLACK][i][j];

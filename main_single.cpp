@@ -60,7 +60,23 @@ const LL ONEMARK = 1;
 
 int SEARCHCNT[] = {0, 6, 6, 6, 7, 7, 7, 7, 9};
 const LL MARKS[][2] = {
-    {3, 1}, {1000, 100}, {100000, 20000}, {10000000, 500000}};
+    {3, 1}, {1000, 100}, {100000, 20000}, {10000000, 200000}};
+
+const int BASE_MARK[15][15] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                               {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+                               {0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+                               {0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 6, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 6, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1, 0},
+                               {0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+                               {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+                               {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 #endif
 #ifndef BOARD_H
 #define BOARD_H
@@ -211,8 +227,8 @@ struct Position {
 };
 
 bool operator<(const Position &lhs, const Position &rhs) {
-    LL lhsw = 14 - abs(SIZE / 2 - lhs.x) - abs(SIZE / 2 - lhs.y) + lhs.w;
-    LL rhsw = 14 - abs(SIZE / 2 - rhs.x) - abs(SIZE / 2 - rhs.y) + rhs.w;
+    LL lhsw = BASE_MARK[lhs.x][lhs.y] + lhs.w;
+    LL rhsw = BASE_MARK[rhs.x][rhs.y] + rhs.w;
     return (lhsw == rhsw)
                ? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x))
                : (lhsw > rhsw);
@@ -445,7 +461,7 @@ void Agent::Init() {
             if (myBoard.boardState[i][j] != UNPLACE) {
                 weight[BLACK][i][j] = weight[WHITE][i][j] = -1;
             } else {
-                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK) * 1.1;
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
                 weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
                 sumWeight[BLACK] += weight[BLACK][i][j];
                 sumWeight[WHITE] += weight[WHITE][i][j];
@@ -484,7 +500,7 @@ void Agent::Update(int x, int y, int color) {
     myBoard.boardState[x][y] = color;
     // 更改为未放置=>增加点在weight和nextPos中的记录
     if (color == UNPLACE) {
-        weight[BLACK][x][y] = myBoard.MarkOfPoint(x, y, BLACK) * 1.1;
+        weight[BLACK][x][y] = myBoard.MarkOfPoint(x, y, BLACK);
         weight[WHITE][x][y] = myBoard.MarkOfPoint(x, y, WHITE);
         sumWeight[WHITE] += weight[WHITE][x][y];
         sumWeight[BLACK] += weight[BLACK][x][y];
@@ -516,7 +532,7 @@ void Agent::Update(int x, int y, int color) {
                 sumWeight[WHITE] -= weight[WHITE][i][j];
                 sumWeight[BLACK] -= weight[BLACK][i][j];
                 // 求出新权值记录并保存
-                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK) * 1.1;
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
                 weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
                 sumWeight[WHITE] += weight[WHITE][i][j];
                 sumWeight[BLACK] += weight[BLACK][i][j];

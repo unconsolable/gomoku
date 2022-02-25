@@ -6,9 +6,11 @@ struct Position {
     LL w;
 };
 
-bool operator<(const Position& lhs, const Position& rhs) {
-    LL lhsw = 14 - abs(SIZE / 2 - lhs.x) - abs(SIZE / 2 - lhs.y) + lhs.w;
-    LL rhsw = 14 - abs(SIZE / 2 - rhs.x) - abs(SIZE / 2 - rhs.y) + rhs.w;
-    return (lhsw == rhsw)? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x)): (lhsw > rhsw);
+bool operator<(const Position &lhs, const Position &rhs) {
+    LL lhsw = BASE_MARK[lhs.x][lhs.y] + lhs.w;
+    LL rhsw = BASE_MARK[rhs.x][rhs.y] + rhs.w;
+    return (lhsw == rhsw)
+               ? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x))
+               : (lhsw > rhsw);
 }
 #endif
