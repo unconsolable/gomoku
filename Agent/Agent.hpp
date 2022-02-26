@@ -78,7 +78,7 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
         // 继续搜索
         LL val;
         if (myBoard.CheckFive(x, y, curColor)) {
-            val = INF;
+            val = INF - (SEARCH_DEPTH - depth);
         } else {
             val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
         }
