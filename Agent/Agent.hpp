@@ -12,6 +12,8 @@ using namespace std;
 struct Agent {
     // 默认后手，持白子
     int color;
+    // 当前迭代深度
+    int iterDepth;
     //计时器
     Timer *myTimer;
     clock_t st;
@@ -33,6 +35,7 @@ struct Agent {
     Agent() {
         color = WHITE;
         myTimer = nullptr;
+        iterDepth = SEARCH_DEPTH;
     }
     ~Agent() { delete myTimer; }
     // 运行
@@ -55,8 +58,10 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
 #ifdef ONLINE_JUDGE
     // 临近超时
     if (1.0 * (clock() - st) / CLOCKS_PER_SEC >= 0.98) {
-        PrintJson();
-        exit(0);
+        // PrintJson();
+        // exit(0);
+        if (curColor == color) return -INF - 1;
+        return INF + 1;
     }
 #endif
     // 搜索完成估值返回
@@ -82,7 +87,7 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
         pos = nextPos[MAX].find(Position{x, y, w});
         // assert(pos != nextPos[MAX].end());
         // 恢复上一次落子位置
-        if (depth == SEARCH_DEPTH &&
+        if (depth == iterDepth &&
             (val > bestScore || bestDropPos == POS_UNDEFINED))
             bestScore = val, bestDropPos = {x, y};
         if (val >= beta) return val;
@@ -112,7 +117,14 @@ void Agent::Run() {
         myTimer = new Timer;
         myTimer->prepare(__LINE__);
 
-        MinMaxSearch(SEARCH_DEPTH, -INF, INF, WHITE);
+#ifndef ITERATIVE_DEEPENING
+        MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
+#else
+        for (int i = 2; i <= SEARCH_DEPTH; i += 2) {
+            iterDepth = i;
+            MinMaxSearch(i, -INF, INF, color);
+        }
+#endif
 
         myTimer->getTimePass(__LINE__);
         cout << "Opponent: " << bestDropPos.first << " " << bestDropPos.second
@@ -132,7 +144,15 @@ void Agent::Run() {
 #else
     Init();
     st = clock();
+#ifndef ITERATIVE_DEEPENING
     MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
+#else
+    for (int i = 2; i <= SEARCH_DEPTH; i += 2) {
+        iterDepth = i;
+        MinMaxSearch(i, -INF, INF, color);
+    }
+#endif
+    // assert(bestScore != INF + 1);
     PrintJson();
 #endif
 }
