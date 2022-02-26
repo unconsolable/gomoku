@@ -267,6 +267,7 @@ void Agent::Update(int x, int y, int color) {
                     i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
                 // nextPos[WHITE].insert(Position{i, j, weight[WHITE][i][j]});
                 // nextPos[BLACK].insert(Position{i, j, weight[BLACK][i][j]});
+                break;
             }
         }
     }
