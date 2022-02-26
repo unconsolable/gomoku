@@ -1,4 +1,4 @@
-# 五子棋
+# Gomoku
 A gomoku player via Min-Max Search and Alpha-Beta Pruning, running on https://botzone.org.cn/
 
 ### 使用方法
@@ -6,22 +6,18 @@ A gomoku player via Min-Max Search and Alpha-Beta Pruning, running on https://bo
 
 本地调试：注释掉首行 ```#define ONLINE_JUDGE ``` 再运行。
 
-### 用户链接
-
+### bot 链接
 8 层 搜索：https://www.botzone.org.cn/account/6092697466ecf10ef5cc9676
 
 10 层搜索：https://www.botzone.org.cn/user/605ecd5eb5a5d724a1fb9230
 
 
 ### 部分对局记录
-先手：
-https://www.botzone.org.cn/match/62186c33bbc22c318dbf77ec
+https://www.botzone.org.cn/match/62197db4bbc22c318dc04a83
 
-https://www.botzone.org.cn/match/62186bc2bbc22c318dbf7793
+https://www.botzone.org.cn/match/62197dfcbbc22c318dc04ac1
 
-https://www.botzone.org.cn/match/6218a829bbc22c318dbf9a1e (对方 bot 排行榜第 8)
+https://www.botzone.org.cn/match/62197ceebbc22c318dc04a1d
 
-后手：
-https://www.botzone.org.cn/match/6218734bbbc22c318dbf7b8c (10 层后手获胜)
-
+https://www.botzone.org.cn/match/62197f8dbbc22c318dc04be9
 
