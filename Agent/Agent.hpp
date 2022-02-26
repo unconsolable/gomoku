@@ -9,6 +9,7 @@
 #include "Timer.hpp"
 
 using namespace std;
+
 struct Agent {
     // 默认后手，持白子
     int color;
@@ -55,15 +56,14 @@ struct Agent {
 };
 
 LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
-#ifdef ONLINE_JUDGE
     // 临近超时
     if (1.0 * (clock() - st) / CLOCKS_PER_SEC >= 0.98) {
         // PrintJson();
         // exit(0);
-        if (curColor == color) return -INF - 1;
-        return INF + 1;
+        // if (curColor == color) return -INF - 1;
+        // return INF + 1;
+        return -TIME_OUT;
     }
-#endif
     // 搜索完成估值返回
     if (depth <= 0) return Evaluate(curColor);
     // 无子可走
@@ -87,6 +87,8 @@ LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
         pos = nextPos[MAX].find(Position{x, y, w});
         // assert(pos != nextPos[MAX].end());
         // 恢复上一次落子位置
+        if (val == TIME_OUT) return -TIME_OUT;
+
         if (depth == iterDepth &&
             (val > bestScore || bestDropPos == POS_UNDEFINED))
             bestScore = val, bestDropPos = {x, y};
@@ -117,6 +119,7 @@ void Agent::Run() {
         myTimer = new Timer;
         myTimer->prepare(__LINE__);
 
+        st = clock();
 #ifndef ITERATIVE_DEEPENING
         MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
 #else

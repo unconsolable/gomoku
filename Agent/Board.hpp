@@ -140,5 +140,4 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
     }
     return total + BASE_MARK[curX][curY];
 }
-
 #endif

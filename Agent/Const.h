@@ -1,3 +1,6 @@
+// #define ONLINE_JUDGE
+// #define ITERATIVE_DEEPENING
+
 #ifndef CONST
 #define CONST
 #include <utility>
@@ -14,17 +17,18 @@ typedef long long LL;
 
 const LL INF = 1E16;
 
-// 表示未设置
+const LL TIME_OUT = INF + 1;
+// bestDropId 表示未设置
 const pair<int, int> POS_UNDEFINED = {-1, -1};
 
 // 最大分支数
-const int BRANCH_LIMIT = 32;
+const int BRANCH_LIMIT = 20;
 
 // 搜索深度默认为 6, 优化后再升级
 const int SEARCH_DEPTH = 8;
 
 // 各局面价值表，待完善
-const int valueTable = 0;
+const int valueTable = {0};
 // 棋盘大小
 const int SIZE = 15;
 // 方向增量
@@ -52,7 +56,7 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-int SEARCHCNT[] = {0, 7, 7, 8, 8, 8, 8, 8, 8};
+int SEARCHCNT[] = {0, 7, 7, 7, 7, 8, 8, 8, 225};
 const LL MARKS[][2] = {
     {10, 1}, {1000, 100}, {100000, 20000}, {10000000, 200000}};
 
