@@ -126,7 +126,7 @@ void Agent::Run() {
 #ifndef ITERATIVE_DEEPENING
         MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
 #else
-        for (int i = 2; i <= SEARCH_DEPTH; i += 2) {
+        for (int i = 6; i <= SEARCH_DEPTH; i += 2) {
             iterDepth = i;
             MinMaxSearch(i, -INF, INF, color);
         }

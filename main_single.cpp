@@ -1,5 +1,5 @@
 #define ONLINE_JUDGE
-// #define ITERATIVE_DEEPENING
+#define ITERATIVE_DEEPENING
 #define RELEASE
 #ifdef RELEASE
 #pragma GCC optimize(3, \
@@ -60,7 +60,7 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-int SEARCHCNT[] = {0, 7, 7, 7, 7, 8, 8, 8, 225};
+int SEARCHCNT[] = {0, 8, 8, 8, 8, 10, 10, 10, 225};
 const LL MARKS[][2] = {{10, 1},
                        {1000, 100},
                        {100000, 20000},
@@ -432,7 +432,7 @@ void Agent::Run() {
 #ifndef ITERATIVE_DEEPENING
     MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
 #else
-    for (int i = 2; i <= SEARCH_DEPTH; i += 2) {
+    for (int i = 6; i <= SEARCH_DEPTH; i += 2) {
         iterDepth = i;
         MinMaxSearch(i, -INF, INF, color);
     }
