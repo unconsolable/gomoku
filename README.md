@@ -9,7 +9,7 @@ A gomoku player via Min-Max Search and Alpha-Beta Pruning, running on https://bo
 本地调试：注释掉首行 ```#define ONLINE_JUDGE ``` 再运行。
 
 ### bot 链接
-8 层 搜索：https://www.botzone.org.cn/account/6092697466ecf10ef5cc9676
+8 层搜索：https://www.botzone.org.cn/account/6092697466ecf10ef5cc9676
 
 10 层搜索：https://www.botzone.org.cn/user/605ecd5eb5a5d724a1fb9230
 
@@ -22,4 +22,20 @@ https://www.botzone.org.cn/match/62197dfcbbc22c318dc04ac1
 https://www.botzone.org.cn/match/62197ceebbc22c318dc04a1d
 
 https://www.botzone.org.cn/match/62197f8dbbc22c318dc04be9
+
+### 现有问题
+1. 棋力不够。
+2. 棋形得分设置不合理（具体体现在 MarkOfPoint 函数以及 MARKS。这部分是队友设计的，改起来也挺麻烦，暂时保持这样），导致一些关键位置被赋予分数过低，间接造成第一个问题。下面是 1 个例子。
+
+<center>
+    <img style="border-radius: 0.3125em;" 
+    src=".\img\sample.png">
+    <br>
+    <div style="color:orange; border-bottom: 1px solid #d9d9d9;
+    display: inline-block;
+    color: #999;
+    padding: 2px;"></div>
+</center>
+
+
 
