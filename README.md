@@ -9,7 +9,7 @@ A gomoku player via Min-Max Search and Alpha-Beta Pruning, running on https://bo
 本地调试：注释掉首行 ```#define ONLINE_JUDGE ``` 再运行。
 
 ### bot 链接
-8 层 搜索：https://www.botzone.org.cn/account/6092697466ecf10ef5cc9676
+8 层搜索：https://www.botzone.org.cn/account/6092697466ecf10ef5cc9676
 
 10 层搜索：https://www.botzone.org.cn/user/605ecd5eb5a5d724a1fb9230
 
