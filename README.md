@@ -15,9 +15,11 @@ A gomoku player via Min-Max Search and Alpha-Beta Pruning, running on https://bo
 
 
 ### 部分对局记录
-https://www.botzone.org.cn/match/624003c46926fb77fe7504af
+https://www.botzone.org.cn/match/624039ac6926fb77fe75242f
 
-https://www.botzone.org.cn/match/621c9a01bbc22c318dc28240
+https://www.botzone.org.cn/match/623e71c56926fb77fe73c8c9
+
+https://www.botzone.org.cn/match/624003c46926fb77fe7504af
 
 https://www.botzone.org.cn/match/621c9a21bbc22c318dc28244
 
