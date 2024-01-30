@@ -5,6 +5,7 @@
 
 /** Transposition Table */
 class TT {
+public:
     enum Flag { EMPTY, EXACT, LOWER, UPPER };
 
     struct Item {
