@@ -11,7 +11,7 @@ Zobrist::Zobrist() {
             }
         }
     }
-    m_hashBoard = generateRandomNumber();
+    m_boardHash = generateRandomNumber();
 }
 
 unsigned long long Zobrist::generateRandomNumber() {
@@ -22,6 +22,6 @@ unsigned long long Zobrist::generateRandomNumber() {
 }
 
 unsigned long long Zobrist::update(int x, int y, Board::CHESS_COLOR color) {
-    m_hashBoard ^= m_hashTable[color][x][y];
-    return m_hashBoard;
+    m_boardHash ^= m_hashTable[color][x][y];
+    return m_boardHash;
 }

@@ -12,7 +12,7 @@ class Zobrist {
     unsigned long long update(int x, int y, Board::CHESS_COLOR);
 
     unsigned long long m_hashTable[2][Board::BOARD_SIZE][Board::BOARD_SIZE];
-    unsigned long long m_hashBoard;
+    unsigned long long m_boardHash;
 };
 
 #endif
