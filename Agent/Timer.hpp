@@ -5,10 +5,16 @@
 using namespace std;
 
 struct Timer {
-    Timer() = default;
-    time_t preTime = 0;
-    time_t preline = 0;
-    int16_t cnt = 0;
+    time_t preTime;
+    time_t preline;
+    int16_t cnt;
+
+    Timer() {
+        preTime = 0;
+        preline = 0;
+        cnt = 0;
+    }
+
     // how to use: timer->prepare(__LINE__);
     void prepare(int line) {
         cnt = 1;
@@ -22,9 +28,11 @@ struct Timer {
             cerr << "Please call prepare() first!" << endl;
             return;
         }
-        cout << "Time taken from line " + to_string(preline) + " to line " + to_string(line) + " is: ";
+        cout << "Time taken from line " + to_string(preline) + " to line " +
+                    to_string(line) + " is: ";
         auto tmp = clock() - preTime;
-        cout << setprecision(3) << fixed << (1.0 * tmp / CLOCKS_PER_SEC) << endl;
+        cout << setprecision(3) << fixed << (1.0 * tmp / CLOCKS_PER_SEC)
+             << endl;
         cnt = 0;
     }
 };

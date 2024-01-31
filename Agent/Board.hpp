@@ -17,21 +17,14 @@ struct Board {
     void Show();
     // 落子
     void PlaceAt(int, int, int);
-    // 随机落子
-    tuple<int, int, bool> RandomPlace(int);
-    // 贪心落子
-    tuple<int, int, bool> GreedyPlace(int);
     // 取消落子
     void UnPlaceAt(int, int);
-    // 检查是否为五子
-    // 全局检查
+    // 全局检查五子
     bool CheckFive(int);
-    // 上次落子位置周围检查
+    // 上次落子位置周围检查五子
     bool CheckFive(int, int, bool);
-    // 更新每个位置得分
-    void CalcValue();
-    // 和当前点相对位置的格子值
-    int RelativePosVal(int, int, int, int);
+    // 和当前点相对位置的格子状态
+    int RelativePosState(int, int, int, int);
     // 判断当前点的得分情况, 详见函数处注释
     LL MarkOfPoint(int, int, int);
 };
@@ -39,7 +32,7 @@ struct Board {
 Board::Board() {
     for (int i = 0; i < SIZE; i++)
         for (int j = 0; j < SIZE; j++) {
-            boardState[i][j] = -1;
+            boardState[i][j] = UNPLACE;
         }
 }
 
@@ -61,7 +54,7 @@ void Board::Show() {
 }
 
 void Board::PlaceAt(int x, int y, int color) {
-    if ((x >= 0 && x < SIZE) && (y >= 0 && y < SIZE))
+    if (x >= 0 && x < SIZE && y >= 0 && y < SIZE)
         boardState[(int)x][(int)y] = color;
 
 #ifndef ONLINE_JUDGE
@@ -72,68 +65,15 @@ void Board::PlaceAt(int x, int y, int color) {
 
 void Board::UnPlaceAt(int x, int y) { boardState[x][y] = -1; }
 
-tuple<int, int, bool> Board::RandomPlace(int color) {
-    vector<int> v;
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == -1) v.push_back(i * 15 + j);
-    }
-    if (!v.size()) return {-1, -1, false};
-    int id = v[rand() % v.size()];
-    PlaceAt(id / 15, id % 15, color);
-    return {id / 15, id % 15, true};
-}
-
-tuple<int, int, bool> Board::GreedyPlace(int color) {
-    vector<int> v;
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == UNPLACE) v.push_back(i * 15 + j);
-    }
-    if (!v.size()) return {-1, -1, false};
-    // 鼓励在中心位置放子
-    auto CentralMark = [](int x, int y) {
-        return 14 - abs(x - 7) - abs(y - 7);
-    };
-    // 考虑放子对自己和对手的影响
-    int maxMark = MarkOfPoint(v[0] / 15, v[0] % 15, color) +
-                  CentralMark(v[0] / 15, v[0] % 15),
-        maxPoint = v[0];
-    for (size_t id = 1; id < v.size(); id++) {
-        auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, color) +
-                       CentralMark(v[id] / 15, v[id] % 15);
-        // cout << "curMark: " << curMark << "x: " << v[id] / 15 << "y: " <<
-        // v[id] % 15 << "\n";
-        if (curMark > maxMark) {
-            maxMark = curMark;
-            maxPoint = v[id];
-        }
-    }
-    // try to fail the oppoent to achieve more than live three
-    int avoidOppoent = -1, oppoentMark = -1;
-    for (size_t id = 0; id < v.size(); id++) {
-        auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, !color) +
-                       CentralMark(v[id] / 15, v[id] % 15);
-        if (curMark > SLEEPTHREEMARK && curMark > oppoentMark) {
-            avoidOppoent = v[id];
-            oppoentMark = curMark;
-        }
-    }
-    if (avoidOppoent != -1) {
-        maxPoint = avoidOppoent;
-    }
-    PlaceAt(maxPoint / 15, maxPoint % 15, color);
-    return {maxPoint / 15, maxPoint % 15, true};
-}
-
 bool Board::CheckFive(int color) {
+    // 遍历每个位置
     for (int i = 0; i < SIZE; i++)
         for (int j = 0; j < SIZE; j++) {
             if (boardState[i][j] != color) continue;
-            // 遍历每个位置
+            // 遍历 4 个方向，另外 4 个等价
             for (int k = 0; k < 4; k++) {
                 int ti = i, tj = j;
-                // 遍历每个棋子
+                // 遍历方向上每个棋子
                 for (int s = 1; s <= 4; s++) {
                     ti += dr[k];
                     tj += dc[k];
@@ -147,6 +87,7 @@ bool Board::CheckFive(int color) {
 }
 
 bool Board::CheckFive(int i, int j, bool color) {
+    // 遍历 4 个方向，另外 4 个等价
     for (int k = 0; k < 4; k++) {
         // 遍历每个棋子
         int cnt = 0;
@@ -157,19 +98,20 @@ bool Board::CheckFive(int i, int j, bool color) {
             if (boardState[ti][tj] != color) break;
             cnt++;
         }
-         for (int s = 1; s <= 4; s++) {
+        if (cnt >= 4) return true;
+        for (int s = 1; s <= 4; s++) {
             int ti = i - s * dr[k];
             int tj = j - s * dc[k];
             if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) break;
             if (boardState[ti][tj] != color) break;
             cnt++;
         }
-        if(cnt >= 4) return true;
+        if (cnt >= 4) return true;
     }
     return false;
 }
 
-int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
+int Board::RelativePosState(int curX, int curY, int direction, int offset) {
     curX = curX + dr[direction] * offset;
     curY = curY + dc[direction] * offset;
     if (curX < 0 || curX >= SIZE || curY < 0 || curY >= SIZE) {
@@ -182,20 +124,39 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
     LL total = 0;
     for (int i = 0; i < 4; i++) {
         int left = 0, right = 0;
-        while (RelativePosVal(curX, curY, i, -left-1) == playerColor)
+        while (RelativePosState(curX, curY, i, -left - 1) == playerColor)
             left++;
-        while (RelativePosVal(curX, curY, i, right+1) == playerColor)
+        while (RelativePosState(curX, curY, i, right + 1) == playerColor)
             right++;
-        int leftUnplace = RelativePosVal(curX, curY, i, -left-1) == UNPLACE, 
-        rightUnplace = RelativePosVal(curX, curY, i, right+1) == UNPLACE;
         if (left + right >= 4) {
-            return MARKS[3][0] * 10;
+            return MARKS[4][0];
         }
+
+        int leftUnplace = RelativePosState(curX, curY, i, -left - 1) == UNPLACE,
+            rightUnplace =
+                RelativePosState(curX, curY, i, right + 1) == UNPLACE;
+        int leftLeftEq =
+                RelativePosState(curX, curY, i, -left - 2) == playerColor,
+            rightRightEq =
+                RelativePosState(curX, curY, i, right + 2) == playerColor;
+
         if (leftUnplace || rightUnplace) {
-            total += MARKS[left + right][leftUnplace ^ rightUnplace];
+            if (left + right == 3)
+                total += MARKS[left + right][leftUnplace ^ rightUnplace];
+            else {
+                bool tagLeft = (leftUnplace & leftLeftEq),
+                     tagRight = (rightUnplace & rightRightEq);
+                if (tagLeft && tagRight)
+                    total +=
+                        MARKS[left + right][leftUnplace ^ rightUnplace] * 100;
+                else if (tagLeft || tagRight)
+                    total +=
+                        MARKS[left + right][leftUnplace ^ rightUnplace] * 5;
+                else
+                    total += MARKS[left + right][leftUnplace ^ rightUnplace];
+            }
         }
     }
-    return total;
+    return total + BASE_MARK[curX][curY];
 }
-
 #endif

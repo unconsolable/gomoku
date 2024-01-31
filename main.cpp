@@ -1,8 +1,10 @@
 #ifdef RELEASE
-#pragma GCC optimize(3, "Ofast,no-stack-protector,unroll-loops,fast-math,inline")
+#pragma GCC optimize(3, \
+                     "Ofast,no-stack-protector,unroll-loops,fast-math,inline")
 #endif
-#include "Agent/Agent.hpp"
 #include <bits/stdc++.h>
+
+#include "Agent/Agent.hpp"
 
 using namespace std;
 

@@ -1,27 +1,31 @@
+// #define ONLINE_JUDGE
+// #define ITERATIVE_DEEPENING
+
 #ifndef CONST
 #define CONST
-#include <bits/stdc++.h>
-// 放置一些公用常量，不要格式化
+#include <utility>
+using std::pair;
+// #define ITERATIVE_DEEPENING
+
+// 放置一些公用常量
 
 #define debug(x) cerr << #x << " = " << x << endl
 
 //#define ONLINE_JUDGE
 
-// 为加快运行速度，用以下类型代替int(如果不超出范围)
-typedef int_fast8_t Byte;
-typedef uint_fast8_t UByte;
 typedef long long LL;
 
 const LL INF = 1E16;
 
+const LL TIME_OUT = INF + 1;
 // bestDropId 表示未设置
-const int BEST_UNDEFINED = -1;
+const pair<int, int> POS_UNDEFINED = {-1, -1};
 
 // 最大分支数
-const int BRANCH_LIMIT = 32;
+const int BRANCH_LIMIT = 20;
 
 // 搜索深度默认为 6, 优化后再升级
-const int SEARCH_DEPTH = 6;
+const int SEARCH_DEPTH = 8;
 
 // 各局面价值表，待完善
 const int valueTable = {0};
@@ -52,7 +56,26 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-const LL MARKS[][2]={{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
+int SEARCHCNT[] = {0, 8, 8, 8, 8, 10, 10, 10, 225};
+const LL MARKS[][2] = {{10, 1},
+                       {1000, 100},
+                       {100000, 20000},
+                       {10000000, 200000},
+                       {1000000000, 1000000000}};
 
-int SEARCHCNT[] = {0, 4, 4, 4, 6, 6, 9};
+const int BASE_MARK[15][15] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                               {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+                               {0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+                               {0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 6, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 6, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1, 0},
+                               {0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+                               {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+                               {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 #endif

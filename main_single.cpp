@@ -1,7 +1,9 @@
 #define ONLINE_JUDGE
+#define ITERATIVE_DEEPENING
 #define RELEASE
 #ifdef RELEASE
-#pragma GCC optimize(3, "Ofast,no-stack-protector,unroll-loops,fast-math,inline")
+#pragma GCC optimize(3, \
+                     "Ofast,no-stack-protector,unroll-loops,fast-math,inline")
 #endif
 #include <bits/stdc++.h>
 using namespace std;
@@ -15,18 +17,16 @@ using namespace std;
 
 //#define ONLINE_JUDGE
 
-// 为加快运行速度，用以下类型代替int(如果不超出范围)
-typedef int_fast8_t Byte;
-typedef uint_fast8_t UByte;
 typedef long long LL;
 
 const LL INF = 1E16;
 
+const LL TIME_OUT = INF + 1;
 // bestDropId 表示未设置
-const int BEST_UNDEFINED = -1;
+const pair<int, int> POS_UNDEFINED = {-1, -1};
 
 // 最大分支数
-const int BRANCH_LIMIT = 32;
+const int BRANCH_LIMIT = 20;
 
 // 搜索深度默认为 6, 优化后再升级
 const int SEARCH_DEPTH = 8;
@@ -60,15 +60,31 @@ const LL FARLIVETWOMARK = 1000;
 const LL SLEEPTWOMARK = 500;
 const LL ONEMARK = 1;
 
-int SEARCHCNT[] = {0, 3, 4, 4, 4, 4, 6, 6, 9};
-const LL MARKS[][2]={{3, 1}, {1000, 20}, {100000, 20000}, {10000000, 200000}};
+int SEARCHCNT[] = {0, 8, 8, 8, 8, 10, 10, 10, 225};
+const LL MARKS[][2] = {{10, 1},
+                       {1000, 100},
+                       {100000, 20000},
+                       {10000000, 200000},
+                       {1000000000, 1000000000}};
 
+const int BASE_MARK[15][15] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                               {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+                               {0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+                               {0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 6, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 6, 6, 6, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 3, 2, 1, 0},
+                               {0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1, 0},
+                               {0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0},
+                               {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
+                               {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 #endif
-// #include <Board.hpp>
 #ifndef BOARD_H
 #define BOARD_H
-
-#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -82,21 +98,14 @@ struct Board {
     void Show();
     // 落子
     void PlaceAt(int, int, int);
-    // 随机落子
-    tuple<int, int, bool> RandomPlace(int);
-    // 贪心落子
-    tuple<int, int, bool> GreedyPlace(int);
     // 取消落子
     void UnPlaceAt(int, int);
-    // 检查是否为五子
-    // 全局检查
+    // 全局检查五子
     bool CheckFive(int);
-    // 上次落子位置周围检查
+    // 上次落子位置周围检查五子
     bool CheckFive(int, int, bool);
-    // 更新每个位置得分
-    void CalcValue();
-    // 和当前点相对位置的格子值
-    int RelativePosVal(int, int, int, int);
+    // 和当前点相对位置的格子状态
+    int RelativePosState(int, int, int, int);
     // 判断当前点的得分情况, 详见函数处注释
     LL MarkOfPoint(int, int, int);
 };
@@ -104,7 +113,7 @@ struct Board {
 Board::Board() {
     for (int i = 0; i < SIZE; i++)
         for (int j = 0; j < SIZE; j++) {
-            boardState[i][j] = -1;
+            boardState[i][j] = UNPLACE;
         }
 }
 
@@ -126,7 +135,7 @@ void Board::Show() {
 }
 
 void Board::PlaceAt(int x, int y, int color) {
-    if ((x >= 0 && x < SIZE) && (y >= 0 && y < SIZE))
+    if (x >= 0 && x < SIZE && y >= 0 && y < SIZE)
         boardState[(int)x][(int)y] = color;
 
 #ifndef ONLINE_JUDGE
@@ -137,68 +146,15 @@ void Board::PlaceAt(int x, int y, int color) {
 
 void Board::UnPlaceAt(int x, int y) { boardState[x][y] = -1; }
 
-tuple<int, int, bool> Board::RandomPlace(int color) {
-    vector<int> v;
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == -1) v.push_back(i * 15 + j);
-    }
-    if (!v.size()) return {-1, -1, false};
-    int id = v[rand() % v.size()];
-    PlaceAt(id / 15, id % 15, color);
-    return {id / 15, id % 15, true};
-}
-
-tuple<int, int, bool> Board::GreedyPlace(int color) {
-    vector<int> v;
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++)
-            if (boardState[i][j] == UNPLACE) v.push_back(i * 15 + j);
-    }
-    if (!v.size()) return {-1, -1, false};
-    // 鼓励在中心位置放子
-    auto CentralMark = [](int x, int y) {
-        return 14 - abs(x - 7) - abs(y - 7);
-    };
-    // 考虑放子对自己和对手的影响
-    int maxMark = MarkOfPoint(v[0] / 15, v[0] % 15, color) +
-                  CentralMark(v[0] / 15, v[0] % 15),
-        maxPoint = v[0];
-    for (size_t id = 1; id < v.size(); id++) {
-        auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, color) +
-                       CentralMark(v[id] / 15, v[id] % 15);
-        // cout << "curMark: " << curMark << "x: " << v[id] / 15 << "y: " <<
-        // v[id] % 15 << "\n";
-        if (curMark > maxMark) {
-            maxMark = curMark;
-            maxPoint = v[id];
-        }
-    }
-    // try to fail the oppoent to achieve more than live three
-    int avoidOppoent = -1, oppoentMark = -1;
-    for (size_t id = 0; id < v.size(); id++) {
-        auto curMark = MarkOfPoint(v[id] / 15, v[id] % 15, !color) +
-                       CentralMark(v[id] / 15, v[id] % 15);
-        if (curMark > SLEEPTHREEMARK && curMark > oppoentMark) {
-            avoidOppoent = v[id];
-            oppoentMark = curMark;
-        }
-    }
-    if (avoidOppoent != -1) {
-        maxPoint = avoidOppoent;
-    }
-    PlaceAt(maxPoint / 15, maxPoint % 15, color);
-    return {maxPoint / 15, maxPoint % 15, true};
-}
-
 bool Board::CheckFive(int color) {
+    // 遍历每个位置
     for (int i = 0; i < SIZE; i++)
         for (int j = 0; j < SIZE; j++) {
             if (boardState[i][j] != color) continue;
-            // 遍历每个位置
+            // 遍历 4 个方向，另外 4 个等价
             for (int k = 0; k < 4; k++) {
                 int ti = i, tj = j;
-                // 遍历每个棋子
+                // 遍历方向上每个棋子
                 for (int s = 1; s <= 4; s++) {
                     ti += dr[k];
                     tj += dc[k];
@@ -212,6 +168,7 @@ bool Board::CheckFive(int color) {
 }
 
 bool Board::CheckFive(int i, int j, bool color) {
+    // 遍历 4 个方向，另外 4 个等价
     for (int k = 0; k < 4; k++) {
         // 遍历每个棋子
         int cnt = 0;
@@ -222,19 +179,20 @@ bool Board::CheckFive(int i, int j, bool color) {
             if (boardState[ti][tj] != color) break;
             cnt++;
         }
-         for (int s = 1; s <= 4; s++) {
+        if (cnt >= 4) return true;
+        for (int s = 1; s <= 4; s++) {
             int ti = i - s * dr[k];
             int tj = j - s * dc[k];
             if (ti < 0 || ti >= SIZE || tj < 0 || tj >= SIZE) break;
             if (boardState[ti][tj] != color) break;
             cnt++;
         }
-        if(cnt >= 4) return true;
+        if (cnt >= 4) return true;
     }
     return false;
 }
 
-int Board::RelativePosVal(int curX, int curY, int direction, int offset) {
+int Board::RelativePosState(int curX, int curY, int direction, int offset) {
     curX = curX + dr[direction] * offset;
     curY = curY + dc[direction] * offset;
     if (curX < 0 || curX >= SIZE || curY < 0 || curY >= SIZE) {
@@ -247,20 +205,40 @@ LL Board::MarkOfPoint(int curX, int curY, int playerColor) {
     LL total = 0;
     for (int i = 0; i < 4; i++) {
         int left = 0, right = 0;
-        while (RelativePosVal(curX, curY, i, -left-1) == playerColor)
+        while (RelativePosState(curX, curY, i, -left - 1) == playerColor)
             left++;
-        while (RelativePosVal(curX, curY, i, right+1) == playerColor)
+        while (RelativePosState(curX, curY, i, right + 1) == playerColor)
             right++;
-        int leftUnplace = RelativePosVal(curX, curY, i, -left-1) == UNPLACE, 
-        rightUnplace = RelativePosVal(curX, curY, i, right+1) == UNPLACE;
         if (left + right >= 4) {
-            return MARKS[3][0] * 10;
+            return MARKS[4][0];
         }
+
+        int leftUnplace = RelativePosState(curX, curY, i, -left - 1) == UNPLACE,
+            rightUnplace =
+                RelativePosState(curX, curY, i, right + 1) == UNPLACE;
+        int leftLeftEq =
+                RelativePosState(curX, curY, i, -left - 2) == playerColor,
+            rightRightEq =
+                RelativePosState(curX, curY, i, right + 2) == playerColor;
+
         if (leftUnplace || rightUnplace) {
-            total += MARKS[left + right][leftUnplace ^ rightUnplace];
+            if (left + right == 3)
+                total += MARKS[left + right][leftUnplace ^ rightUnplace];
+            else {
+                bool tagLeft = (leftUnplace & leftLeftEq),
+                     tagRight = (rightUnplace & rightRightEq);
+                if (tagLeft && tagRight)
+                    total +=
+                        MARKS[left + right][leftUnplace ^ rightUnplace] * 100;
+                else if (tagLeft || tagRight)
+                    total +=
+                        MARKS[left + right][leftUnplace ^ rightUnplace] * 5;
+                else
+                    total += MARKS[left + right][leftUnplace ^ rightUnplace];
+            }
         }
     }
-    return total;
+    return total + BASE_MARK[curX][curY];
 }
 
 #endif
@@ -272,11 +250,53 @@ struct Position {
     LL w;
 };
 
-bool operator<(const Position& lhs, const Position& rhs) {
-    LL lhsw = 14 - abs(SIZE / 2 - lhs.x) - abs(SIZE / 2 - lhs.y) + lhs.w;
-    LL rhsw = 14 - abs(SIZE / 2 - rhs.x) - abs(SIZE / 2 - rhs.y) + rhs.w;
-    return (lhsw == rhsw)? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x)): (lhsw > rhsw);
+bool operator<(const Position &lhs, const Position &rhs) {
+    return (lhs.w == rhs.w)
+               ? ((lhs.x == rhs.x) ? (lhs.y < rhs.y) : (lhs.x < rhs.x))
+               : (lhs.w > rhs.w);
 }
+
+#ifndef TIMER_H
+#define TIMER_H
+#include <bits/stdc++.h>
+
+using namespace std;
+
+struct Timer {
+    time_t preTime;
+    time_t preline;
+    int16_t cnt;
+
+    Timer() {
+        preTime = 0;
+        preline = 0;
+        cnt = 0;
+    }
+
+    // how to use: timer->prepare(__LINE__);
+    void prepare(int line) {
+        cnt = 1;
+        preline = line;
+        preTime = clock();
+    }
+    // how to use: timer->getTimePass(__LINE__);
+    void getTimePass(int line) {
+        if (cnt != 1) {
+            cerr << "line " << line << ": ";
+            cerr << "Please call prepare() first!" << endl;
+            return;
+        }
+        cout << "Time taken from line " + to_string(preline) + " to line " +
+                    to_string(line) + " is: ";
+        auto tmp = clock() - preTime;
+        cout << setprecision(3) << fixed << (1.0 * tmp / CLOCKS_PER_SEC)
+             << endl;
+        cnt = 0;
+    }
+};
+
+#endif
+
 #endif
 // #include <Agent.hpp>
 #ifndef AGENT_HPP
@@ -285,108 +305,112 @@ bool operator<(const Position& lhs, const Position& rhs) {
 #include <bits/stdc++.h>
 
 #include "jsoncpp/json.h"
-#define UNUSED(x, y) (x) += (y)
 
 using namespace std;
+
 struct Agent {
-    // 默认后手
-    int color = WHITE;
+    // 默认后手，持白子
+    int color;
+    // 当前迭代深度
+    int iterDepth;
     //计时器
-    // Timer* myTimer = nullptr;
+    Timer *myTimer;
+    clock_t st;
     // 棋盘
     Board myBoard;
     // 最优落子
-    int bestDropId = -1;
-    // 地方上一次落子位置
-    int lastDropId = -1;
+    pair<int, int> bestDropPos;
     // 最高得分
-    LL bestScore = -INF;
+    LL bestScore;
     // 落子位置和对应的权重, 用于在set中查找.
     // -1表示有棋子的点
-    LL weight[2][225];
+    LL weight[2][15][15];
     // 按照权排序的落子位置集合
     set<Position> nextPos[3];
     // 白子和黑子的权值之和
     LL sumWeight[2];
 
+    // 构造函数
+    Agent() {
+        color = WHITE;
+        myTimer = nullptr;
+        iterDepth = SEARCH_DEPTH;
+    }
+    ~Agent() { delete myTimer; }
     // 运行
     void Run();
-    // 初始化局面
-    void Init();
     // 判断AI是否为先手
-    void DetermineBlack(const Json::Value &);
+    void DetermineColor(const Json::Value &);
     // 局面估值
     LL Evaluate(int);
-    // 更改一个点的颜色, 同时更新附近的9*9格子内的空闲点权值信息
-    // 后续优化可以尝试减少更改的范围
+    // 更改一个点的颜色, 同时更新附近的 9 * 4 格子内的空闲点权值信息
     void Update(int x, int y, int color);
-    // 局面预处理, 初始化nextPos和weight数组
-    void Preplay();
+    // 局面预处理
+    void Init();
     // 搜素
-    LL MinMaxSearch(int, LL, LL, bool);
+    LL MinMaxSearch(int, LL, LL, int);
+    // Jason形式输出落子
+    void PrintJson();
 };
 
-LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, bool curColor) {
-    // 对手五连应该直接返回 -INF
-    if (lastDropId != -1 &&
-        myBoard.CheckFive(lastDropId / 15, lastDropId % 15, curColor ^ 1))
-        return -INF;
-    // 层数用完，估值返回
+LL Agent::MinMaxSearch(int depth, LL alpha, LL beta, int curColor) {
+    // 临近超时
+    if (1.0 * (clock() - st) / CLOCKS_PER_SEC >= 0.98) {
+        // PrintJson();
+        // exit(0);
+        // if (curColor == color) return -INF - 1;
+        // return INF + 1;
+        return -TIME_OUT;
+    }
+    // 搜索完成估值返回
     if (depth <= 0) return Evaluate(curColor);
     // 无子可走
-    if(!nextPos[MAX].size()) return -INF;
-    // 对所有可能局面进行搜索
-    // set<Position> tmp;
+    if (!nextPos[MAX].size()) return alpha;
     auto pos = nextPos[MAX].begin();
-    // 部分拷贝
-    // for(int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end(); i++) {
-    //     tmp.insert(*pos);
-    //     pos++;
-    // }
-    // 全拷贝
-    /*for(int i = 0; i < nextPos[MAX].size(); i++) {
-        tmp.insert(*pos);
-        pos++;
-    }*/
-    for(int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end(); i++, pos++) {
+    for (int i = 0; i < SEARCHCNT[depth] && pos != nextPos[MAX].end();
+         i++, pos++) {
         auto x = pos->x, y = pos->y;
         auto w = pos->w;
-        Update(x, y, curColor);
-        // 更改上一次落子位置
-        int tmpId = lastDropId;
-        lastDropId = x * 15 + y;
+
         // 继续搜索
-        LL val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
-        // 取消落子 更新得分
-        Update(x, y, UNPLACE);
-        pos = nextPos[MAX].find(Position{x, y, w});
-        assert(pos != nextPos[MAX].end());
-        // 恢复上一次落子位置
-        lastDropId = tmpId;
-        if (val >= beta) {
-            if (depth == SEARCH_DEPTH) bestScore = val, bestDropId = x * 15 + y;
-            return val;
+        LL val;
+        if (weight[curColor][x][y] >= MARKS[4][0]) {
+            val = INF - (iterDepth - depth);
+        } else {
+            // 落子
+            Update(x, y, curColor);
+            val = -MinMaxSearch(depth - 1, -beta, -alpha, !curColor);
+            // 取消落子 更新得分
+            Update(x, y, UNPLACE);
+            pos = nextPos[MAX].find(Position{x, y, w});
+#ifndef ONLINE_JUDGE
+            assert(pos != nextPos[MAX].end());
+#endif
         }
-        if (val > alpha) alpha = val;  // bestDropId
-        if (depth == SEARCH_DEPTH &&
-            (val > bestScore || bestDropId == BEST_UNDEFINED))
-            bestScore = val, bestDropId = x * 15 + y;
+
+        if (val == TIME_OUT) return -TIME_OUT;
+
+        if (depth == iterDepth &&
+            (val > bestScore || bestDropPos == POS_UNDEFINED))
+            bestScore = val, bestDropPos = {x, y};
+        if (val >= beta) return val;
+        if (val > alpha) alpha = val;
     }
     return alpha;
 }
 
 void Agent::Run() {
-    Init();
-
 #ifndef ONLINE_JUDGE
     myBoard.Show();
     while (true) {
-        Preplay();
-        lastDropId = bestDropId = -1;
-        bestScore = -INF;
+        Init();
         int x, y;
         cout << "Your drop position: ";
         cin >> x >> y;
+        if (myBoard.RelativePosState(x, y, 0, 0) != UNPLACE) {
+            cout << "This position is already occupied!" << endl;
+            continue;
+        }
         Update(x, y, BLACK);
         if (myBoard.CheckFive(BLACK)) {
             myBoard.Show();
@@ -395,27 +419,70 @@ void Agent::Run() {
         }
         myTimer = new Timer;
         myTimer->prepare(__LINE__);
-        // auto [aix, aiy, ok] = myBoard.RandomPlace(color);
-        // auto [aix, aiy, ok] = myBoard.GreedyPlace(color);
-        MinMaxSearch(SEARCH_DEPTH, -INF, INF, WHITE);
+
+        st = clock();
+#ifndef ITERATIVE_DEEPENING
+        MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
+#else
+        for (int i = 2; i <= SEARCH_DEPTH; i += 2) {
+            iterDepth = i;
+            MinMaxSearch(i, -INF, INF, color);
+        }
+#endif
+
         myTimer->getTimePass(__LINE__);
-        cout << "Opponent: " << bestDropId / 15 << " " << bestDropId % 15 << endl;
+        cout << "Opponent: " << bestDropPos.first << " " << bestDropPos.second
+             << endl;
         // 落子
-        Update(bestDropId / 15, bestDropId % 15, WHITE);
-        debug(nextPos[WHITE].size());
-        debug(nextPos[BLACK].size());
+        Update(bestDropPos.first, bestDropPos.second, WHITE);
+        // debug(nextPos[WHITE].size());
+        // debug(nextPos[BLACK].size());
         debug(nextPos[MAX].size());
         debug(bestScore);
         myBoard.Show();
-        // if (!ok) {
-        //    break;
-        //}
         if (myBoard.CheckFive(WHITE)) {
             cout << "you lose" << endl;
             break;
         }
     }
 #else
+    Init();
+    st = clock();
+#ifndef ITERATIVE_DEEPENING
+    MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
+#else
+    for (int i = 6; i <= SEARCH_DEPTH; i += 2) {
+        iterDepth = i;
+        MinMaxSearch(i, -INF, INF, color);
+    }
+#endif
+    // assert(bestScore != INF + 1);
+    PrintJson();
+#endif
+}
+
+void Agent::PrintJson() {
+    Json::Value ret;
+    ret["response"]["x"] = bestDropPos.first;
+    ret["response"]["y"] = bestDropPos.second;
+    Json::FastWriter writer;
+    cout << writer.write(ret) << endl;
+}
+
+void Agent::DetermineColor(const Json::Value &input) {
+    if (input["requests"][0u]["x"].asInt() == -1 &&
+        input["requests"][0u]["y"].asInt() == -1) {
+        color = BLACK;
+    } else {
+        color = WHITE;
+    }
+}
+
+void Agent::Init() {
+    bestDropPos = POS_UNDEFINED;
+    bestScore = -INF;
+
+#ifdef ONLINE_JUDGE
     // 读入JSON
     string str;
     getline(cin, str);
@@ -424,57 +491,34 @@ void Agent::Run() {
     reader.parse(str, input);
     // 分析自己收到的输入和自己过往的输出，并恢复状态
     int turnID = input["responses"].size();
-    DetermineBlack(input);
+    DetermineColor(input);
     for (int i = 0; i < turnID; i++) {
-        myBoard.PlaceAt(input["requests"][i]["x"].asInt(), input["requests"][i]["y"].asInt(), !color);
-        myBoard.PlaceAt(input["responses"][i]["x"].asInt(), input["responses"][i]["y"].asInt(), color);
+        myBoard.PlaceAt(input["requests"][i]["x"].asInt(),
+                        input["requests"][i]["y"].asInt(), !color);
+        myBoard.PlaceAt(input["responses"][i]["x"].asInt(),
+                        input["responses"][i]["y"].asInt(), color);
     }
-    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(), input["requests"][turnID]["y"].asInt(), !color);
-    Preplay();
-    MinMaxSearch(SEARCH_DEPTH, -INF, INF, color);
-    Json::Value ret;
-    ret["response"]["x"] = bestDropId / 15;
-    ret["response"]["y"] = bestDropId % 15;
-    Json::FastWriter writer;
-    cout << writer.write(ret) << endl;
+    myBoard.PlaceAt(input["requests"][turnID]["x"].asInt(),
+                    input["requests"][turnID]["y"].asInt(), !color);
 #endif
-}
 
-void Agent::Init() {
-    // 根据json输入恢复棋盘状态
-    // 最后一对坐标为 (-1,-1) 则 color 设为 1，我方先手
-    // 否则，更新棋盘状态，我方后手
-    // 本地测试不需要恢复，直接跳过
-}
-
-void Agent::DetermineBlack(const Json::Value &input) {
-    if (input["requests"][0u]["x"].asInt() == -1 && input["requests"][0u]["y"].asInt() == -1) {
-        color = BLACK;
-    } else {
-        color = WHITE;
-    }
-}
-
-void Agent::Preplay() {
-    // 初始化weight和nextPos
+    // 初始化 weight 和 nextPoss
     sumWeight[0] = sumWeight[1] = 0;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             // 如果位置上已有棋子, 标记权重为-1
             // 否则计算权重, 并分别存放在weight和nextPos中
             if (myBoard.boardState[i][j] != UNPLACE) {
-                weight[BLACK][i * 15 + j] = weight[WHITE][i * 15 + j] = -1;           
+                weight[BLACK][i][j] = weight[WHITE][i][j] = -1;
             } else {
-                weight[BLACK][i * 15 + j] = myBoard.MarkOfPoint(i, j, BLACK);
-                weight[WHITE][i * 15 + j] = myBoard.MarkOfPoint(i, j, WHITE);
-                sumWeight[BLACK] += weight[BLACK][i * 15 + j];
-                sumWeight[WHITE] += weight[WHITE][i * 15 + j];
-                nextPos[MAX].insert(
-                    Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
-                nextPos[WHITE].insert(
-                    Position{i, j, weight[WHITE][i * 15 + j]});
-                nextPos[BLACK].insert(
-                    Position{i, j, weight[BLACK][i * 15 + j]});
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
+                sumWeight[BLACK] += weight[BLACK][i][j];
+                sumWeight[WHITE] += weight[WHITE][i][j];
+                nextPos[MAX].insert(Position{
+                    i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
+                // nextPos[WHITE].insert(Position{i, j, weight[WHITE][i][j]});
+                // nextPos[BLACK].insert(Position{i, j, weight[BLACK][i][j]});
             }
         }
     }
@@ -485,72 +529,82 @@ void Agent::Update(int x, int y, int color) {
         return;
     }
     // 检查是否均为或均不为未放置
-    assert(!(weight[BLACK][x * 15 + y] == -1) ^ (weight[WHITE][x * 15 + y] == -1));
+    assert(!(weight[BLACK][x][y] == -1) ^ (weight[WHITE][x][y] == -1));
     // 原始为未放置=>清除点在weight和nextPos中的记录
-    if (weight[BLACK][x * 15 + y] != -1 && weight[WHITE][x * 15 + y] != -1) {
+    if (weight[BLACK][x][y] != -1 && weight[WHITE][x][y] != -1) {
 #ifndef ONLINE_JUDGE
-        assert(nextPos[MAX].count(
-                   Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])}) == 1);
-        assert(nextPos[WHITE].count(Position{x, y, weight[WHITE][x * 15 + y]}) == 1);
-        assert(nextPos[BLACK].count(Position{x, y, weight[BLACK][x * 15 + y]}) == 1);
+        assert(nextPos[MAX].count(Position{
+                   x, y, max(weight[WHITE][x][y], weight[BLACK][x][y])}) == 1);
+        // assert(nextPos[WHITE].count(Position{x, y, weight[WHITE][x][y]}) ==
+        // 1); assert(nextPos[BLACK].count(Position{x, y, weight[BLACK][x][y]})
+        // == 1);
 #endif
-        nextPos[MAX].erase(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
-        nextPos[WHITE].erase(Position{x, y, weight[WHITE][x * 15 + y]});
-        nextPos[BLACK].erase(Position{x, y, weight[BLACK][x * 15 + y]});
-        sumWeight[WHITE] -= weight[WHITE][x * 15 + y];
-        sumWeight[BLACK] -= weight[BLACK][x * 15 + y];
-        weight[BLACK][x * 15 + y] = weight[WHITE][x * 15 + y] = -1;
+        nextPos[MAX].erase(
+            Position{x, y, max(weight[WHITE][x][y], weight[BLACK][x][y])});
+        // nextPos[WHITE].erase(Position{x, y, weight[WHITE][x][y]});
+        // nextPos[BLACK].erase(Position{x, y, weight[BLACK][x][y]});
+        sumWeight[WHITE] -= weight[WHITE][x][y];
+        sumWeight[BLACK] -= weight[BLACK][x][y];
+        weight[BLACK][x][y] = weight[WHITE][x][y] = -1;
     }
     myBoard.boardState[x][y] = color;
     // 更改为未放置=>增加点在weight和nextPos中的记录
     if (color == UNPLACE) {
-        weight[BLACK][x * 15 + y] = myBoard.MarkOfPoint(x, y, BLACK);
-        weight[WHITE][x * 15 + y] = myBoard.MarkOfPoint(x, y, WHITE);
-        sumWeight[WHITE] += weight[WHITE][x * 15 + y];
-        sumWeight[BLACK] += weight[BLACK][x * 15 + y];
-        nextPos[MAX].insert(Position{x, y, max(weight[WHITE][x * 15 + y], weight[BLACK][x * 15 + y])});
-        nextPos[WHITE].insert(Position{x, y, weight[WHITE][x * 15 + y]});
-        nextPos[BLACK].insert(Position{x, y, weight[BLACK][x * 15 + y]});
+        weight[BLACK][x][y] = myBoard.MarkOfPoint(x, y, BLACK);
+        weight[WHITE][x][y] = myBoard.MarkOfPoint(x, y, WHITE);
+        sumWeight[WHITE] += weight[WHITE][x][y];
+        sumWeight[BLACK] += weight[BLACK][x][y];
+        nextPos[MAX].insert(
+            Position{x, y, max(weight[WHITE][x][y], weight[BLACK][x][y])});
+        // nextPos[WHITE].insert(Position{x, y, weight[WHITE][x][y]});
+        // nextPos[BLACK].insert(Position{x, y, weight[BLACK][x][y]});
     }
     // 修改完成后, 在8*4范围内修改空闲点的权值
     for (int dir = 0; dir < 8; dir++) {
+        int preState = INVALID;
         for (int off = 1; off < 5; off++) {
-            if (myBoard.RelativePosVal(x, y, dir, off) == UNPLACE) {
+            int state = myBoard.RelativePosState(x, y, dir, off);
+            if (state == INVALID) break;
+            if (state == UNPLACE) {
                 int i = x + dr[dir] * off, j = y + dc[dir] * off;
 // 删除现存权值记录
 #ifndef ONLINE_JUDGE
-                assert(nextPos[MAX].count(Position{
-                           i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])}) == 1);
-                assert(nextPos[BLACK].count(Position{i, j, weight[BLACK][i * 15 + j]}) == 1);
-                assert(nextPos[WHITE].count(Position{i, j, weight[WHITE][i * 15 + j]}) == 1);
+                assert(
+                    nextPos[MAX].count(Position{
+                        i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])}) ==
+                    1);
+                // assert(nextPos[BLACK].count(
+                //            Position{i, j, weight[BLACK][i][j]}) == 1);
+                // assert(nextPos[WHITE].count(
+                //            Position{i, j, weight[WHITE][i][j]}) == 1);
 #endif
-                nextPos[MAX].erase(Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
-                nextPos[WHITE].erase(Position{i, j, weight[WHITE][i * 15 + j]});
-                nextPos[BLACK].erase(Position{i, j, weight[BLACK][i * 15 + j]});
-                sumWeight[WHITE] -= weight[WHITE][i * 15 + j];
-                sumWeight[BLACK] -= weight[BLACK][i * 15 + j];
+                nextPos[MAX].erase(Position{
+                    i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
+                // nextPos[WHITE].erase(Position{i, j, weight[WHITE][i][j]});
+                // nextPos[BLACK].erase(Position{i, j, weight[BLACK][i][j]});
+                sumWeight[WHITE] -= weight[WHITE][i][j];
+                sumWeight[BLACK] -= weight[BLACK][i][j];
                 // 求出新权值记录并保存
-                weight[BLACK][i * 15 + j] = myBoard.MarkOfPoint(i, j, BLACK);
-                weight[WHITE][i * 15 + j] = myBoard.MarkOfPoint(i, j, WHITE);
-                sumWeight[WHITE] += weight[WHITE][i * 15 + j];
-                sumWeight[BLACK] += weight[BLACK][i * 15 + j];
+                weight[BLACK][i][j] = myBoard.MarkOfPoint(i, j, BLACK);
+                weight[WHITE][i][j] = myBoard.MarkOfPoint(i, j, WHITE);
+                sumWeight[WHITE] += weight[WHITE][i][j];
+                sumWeight[BLACK] += weight[BLACK][i][j];
                 // 新增记录
-                nextPos[MAX].insert(Position{i, j, max(weight[WHITE][i * 15 + j], weight[BLACK][i * 15 + j])});
-                nextPos[WHITE].insert(Position{i, j, weight[WHITE][i * 15 + j]});
-                nextPos[BLACK].insert(Position{i, j, weight[BLACK][i * 15 + j]});
-            }
+                nextPos[MAX].insert(Position{
+                    i, j, max(weight[WHITE][i][j], weight[BLACK][i][j])});
+                // nextPos[WHITE].insert(Position{i, j, weight[WHITE][i][j]});
+                // nextPos[BLACK].insert(Position{i, j, weight[BLACK][i][j]});
+                // break;
+                if (off > 1 && preState == UNPLACE) break;
+                preState = state;
+            } else if (preState == !state)
+                break;
         }
     }
 }
 
 LL Agent::Evaluate(int color) {
-    // LL tot = 0;
-    // for (auto& pos : nextPos[color]) tot += pos.w;
-    // assert(tot == sumWeight[color]);
-    // for (auto& pos : nextPos[color ^ 1]) tot -= pos.w * 8 / 10;
-    return sumWeight[color] - (sumWeight[color ^ 1] * 8 / 10);
-    //return nextPos[color].begin()->w;
-    // return tot;
+    return sumWeight[color] * 2 - sumWeight[color ^ 1];
 }
 
 #endif
