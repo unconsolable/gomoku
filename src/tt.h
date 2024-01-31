@@ -5,7 +5,7 @@
 
 /** Transposition Table */
 class TT {
-public:
+   public:
     enum Flag { EMPTY, EXACT, LOWER, UPPER };
 
     struct Item {
@@ -20,9 +20,9 @@ public:
 
     int getHashIndex(unsigned long long hash) { return hash & 0xFFFFF; }
 
-    int find(int depth, unsigned long long hash, int alpha, int beta,
+    int find(unsigned long long hash, int depth, int alpha, int beta,
              Board::CHESS_COLOR);
-    void insert(int depth, unsigned long long hash, int value, Flag,
+    void insert(unsigned long long hash, int depth, int value, Flag,
                 Board::CHESS_COLOR);
 
     const static int LENGTH = 1 << 20;
